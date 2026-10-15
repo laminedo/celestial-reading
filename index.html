@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Celestial Reading</title>
+  <meta name="description" content="Enter your birthday for your full astrological reading — birth chart plus daily, weekly and monthly guidance.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#" id="brand">✧ Celestial Reading</a>
+    <button class="ghost small" id="edit-btn" hidden>Edit birth details</button>
+  </header>
+
+  <main>
+    <section id="intake" class="intake">
+      <p class="eyebrow">Your stars, decoded</p>
+      <h1>What do the planets<br>ask of you right now?</h1>
+      <p class="lede">Enter your birthday for your full birth chart reading, plus daily, weekly and monthly guidance on exactly what to focus on — calculated from real planetary positions.</p>
+
+      <form id="birth-form" class="card form-card" autocomplete="off">
+        <label>
+          <span>Your name <em>(optional)</em></span>
+          <input type="text" name="name" placeholder="e.g. Amara" maxlength="40">
+        </label>
+        <label>
+          <span>Birth date</span>
+          <input type="date" name="date" required min="1900-01-01" max="2099-12-31">
+        </label>
+        <label>
+          <span>Birth time <em>(optional)</em></span>
+          <input type="time" name="time">
+        </label>
+        <div class="city-field">
+          <label for="city-input"><span>Birth city <em>(optional)</em></span></label>
+          <input type="text" id="city-input" name="city" placeholder="Start typing, e.g. Dakar" autocomplete="off"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-list">
+          <ul id="city-list" class="city-list" role="listbox" hidden></ul>
+          <p class="place-info" id="place-info"></p>
+        </div>
+        <details class="manual" id="manual">
+          <summary>Can't find your city? Enter coordinates</summary>
+          <div class="row">
+            <label><span>Latitude</span><input type="number" name="lat" step="any" min="-90" max="90" placeholder="14.69"></label>
+            <label><span>Longitude</span><input type="number" name="lon" step="any" min="-180" max="180" placeholder="-17.44"></label>
+          </div>
+          <p class="hint">North and east are positive; south and west are negative.</p>
+        </details>
+        <label>
+          <span>Birth time zone</span>
+          <select name="tz" id="tz-select"></select>
+        </label>
+        <p class="hint">Time + city unlock your rising sign and precise houses. Birth time also pins down your Moon sign — it moves about 13° a day.</p>
+        <button type="submit" class="primary">Reveal my reading ✧</button>
+      </form>
+    </section>
+
+    <section id="results" hidden></section>
+  </main>
+
+  <footer class="site-footer">
+    For reflection and entertainment. Planet positions use low-precision astronomical formulas (accurate to about 1°).
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/astro.js"></script>
+  <script src="js/reading.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
