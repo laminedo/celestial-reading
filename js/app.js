@@ -146,13 +146,80 @@
     }
   }
 
+  // ---------- typed birth date (MM/DD/YYYY) ----------
+  const dateInput = $("#date-input");
+  const dateError = $("#date-error");
+
+  // Rebuild the field as MM/DD/YYYY, padding single digits ("5/3/1990" → "05/03/1990").
+  function formatTypedDate(raw, typingForward) {
+    const segs = ["", "", ""], max = [2, 2, 4];
+    let seg = 0;
+    const advance = () => {
+      if (seg < 2 && segs[seg]) {
+        if (segs[seg].length === 1) segs[seg] = "0" + segs[seg];
+        seg++;
+      }
+    };
+    for (const ch of raw) {
+      if (/\d/.test(ch)) {
+        if (segs[seg].length >= max[seg]) { if (seg === 2) break; advance(); }
+        segs[seg] += ch;
+        // A month starting 2–9 or a day starting 4–9 can only be one digit.
+        if ((seg === 0 && segs[0].length === 1 && ch > "1") || (seg === 1 && segs[1].length === 1 && ch > "3")) advance();
+      } else {
+        advance();
+      }
+    }
+    if (typingForward && seg < 2 && segs[seg].length === max[seg]) advance();
+    return segs[0] + (seg >= 1 ? "/" + segs[1] : "") + (seg >= 2 ? "/" + segs[2] : "");
+  }
+
+  function parseTypedDate(value) {
+    const m = String(value || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+    if (!m) return { error: "Enter your birthday as MM/DD/YYYY, e.g. 11/08/1995." };
+    const month = Number(m[1]), day = Number(m[2]);
+    let year = Number(m[3]);
+    if (m[3].length === 2) {
+      const yy = new Date().getFullYear() % 100;
+      year += year > yy ? 1900 : 2000;
+    }
+    if (month < 1 || month > 12) return { error: "Month must be between 01 and 12." };
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (day < 1 || day > daysInMonth) {
+      return { error: `${new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: "long" })} ${year} has ${daysInMonth} days.` };
+    }
+    if (year < 1900) return { error: "Please enter a year from 1900 onward." };
+    if (new Date(year, month - 1, day) > new Date()) return { error: "Your birth date can't be in the future." };
+    return { iso: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
+  }
+
+  const isoToTyped = (iso) => {
+    const [y, m, d] = (iso || "").split("-");
+    return y ? `${m}/${d}/${y}` : "";
+  };
+
+  function showDateError(msg) {
+    dateError.textContent = msg || "";
+    dateInput.setAttribute("aria-invalid", msg ? "true" : "false");
+  }
+
+  dateInput.addEventListener("input", (e) => {
+    const forward = !(e.inputType || "").startsWith("delete");
+    dateInput.value = formatTypedDate(dateInput.value, forward);
+    showDateError("");
+  });
+  dateInput.addEventListener("blur", () => {
+    if (dateInput.value.trim()) showDateError(parseTypedDate(dateInput.value).error);
+  });
+
   // ---------- form ----------
   const form = $("#birth-form");
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
-    const birth = { name: fd.get("name").trim(), date: fd.get("date"), time: fd.get("time"), tz: fd.get("tz") };
-    if (!birth.date) return;
+    const parsed = parseTypedDate(fd.get("date"));
+    if (parsed.error) { showDateError(parsed.error); dateInput.focus(); return; }
+    const birth = { name: fd.get("name").trim(), date: parsed.iso, time: fd.get("time"), tz: fd.get("tz") };
     const btn = form.querySelector("button[type=submit]");
     btn.disabled = true;
     btn.textContent = "Reading the stars…";
@@ -181,15 +248,15 @@
     $("#results").hidden = true;
     $("#edit-btn").hidden = true;
     if (state.birth) {
-      form.name.value = state.birth.name || "";
-      form.date.value = state.birth.date;
-      form.time.value = state.birth.time || "";
-      form.tz.value = state.birth.tz || "auto";
+      form.elements.name.value = state.birth.name || "";
+      form.elements.date.value = isoToTyped(state.birth.date);
+      form.elements.time.value = state.birth.time || "";
+      form.elements.tz.value = state.birth.tz || "auto";
       const p = state.birth.place;
       cityInput.value = p ? state.birth.placeLabel || placeLabel(p) : "";
       setPlace(p && p.timezone ? p : null);
-      form.lat.value = p && !p.timezone ? p.lat : "";
-      form.lon.value = p && !p.timezone ? p.lon : "";
+      form.elements.lat.value = p && !p.timezone ? p.lat : "";
+      form.elements.lon.value = p && !p.timezone ? p.lon : "";
       $("#manual").open = Boolean(p && !p.timezone);
     }
   }

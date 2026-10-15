@@ -31,8 +31,10 @@
         </label>
         <label>
           <span>Birth date</span>
-          <input type="date" name="date" required min="1900-01-01" max="2099-12-31">
+          <input type="text" name="date" id="date-input" inputmode="numeric" autocomplete="bday"
+                 placeholder="MM / DD / YYYY" maxlength="14" required aria-describedby="date-error">
         </label>
+        <p class="field-error" id="date-error" aria-live="polite"></p>
         <label>
           <span>Birth time <em>(optional)</em></span>
           <input type="time" name="time">
