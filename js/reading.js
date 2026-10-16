@@ -373,6 +373,7 @@ const Reading = (() => {
     });
 
     const birthday = (() => {
+      if (chart.generic) return null; // sign-wide horoscope: no personal birthday
       const bd = new Date(chart.when);
       return bd.getMonth() === start.getMonth() ? noon(new Date(start.getFullYear(), bd.getMonth(), bd.getDate())) : null;
     })();
@@ -435,5 +436,11 @@ const Reading = (() => {
     };
   }
 
-  return { natal, placementText, daily, weekly, monthly, ORD, PLANET_KEYS, solarHouse, retrogrades, dayScores, zonedToUtc };
+  // A sun-sign "chart" for horoscopes written for everyone born under one sign (solar houses from that sign).
+  function signChart(sign) {
+    const signs = Object.fromEntries(PLANET_KEYS.map((k) => [k, sign]));
+    return { name: "", seed: `sign|${sign}`, signs, houseSign: sign, rising: null, when: new Date(2000, 0, 1), generic: true };
+  }
+
+  return { natal, placementText, daily, weekly, monthly, signChart, ORD, PLANET_KEYS, solarHouse, retrogrades, dayScores, zonedToUtc };
 })();

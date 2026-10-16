@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monthly Horoscopes · Celestial Reading</title>
+  <meta name="description" content="Monthly horoscopes for all 12 signs, ready to post: image cards and a PDF guide in English or French.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#090a1a">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="./" data-fr="✧ Celestial Reading">✧ Celestial Reading</a>
+    <button class="ghost small lang-btn" id="lang-btn" aria-label="Language / Langue">FR</button>
+    <a class="ghost small btn-link" href="./" data-fr="Ma lecture personnelle">My personal reading</a>
+  </header>
+
+  <main class="share-page">
+    <section class="intake share-intro">
+      <p class="eyebrow" data-fr="Horoscopes à partager">Horoscopes to share</p>
+      <h1 id="share-title">Monthly horoscopes for all 12 signs</h1>
+      <p class="lede" data-fr="Une carte par signe, calculée à partir des vraies positions des planètes du mois, plus une couverture et un guide PDF. Téléchargez le pack et publiez-le sur Facebook le 1er du mois.">One card per sign, calculated from the month's real planet positions, plus a cover and a PDF guide. Download the bundle and post it on Facebook on the 1st of the month.</p>
+    </section>
+
+    <section class="card share-settings">
+      <h3 data-fr="Vos informations sur les cartes">Your details on the cards</h3>
+      <div class="row3">
+        <label class="field"><span data-fr="Nom de la marque">Brand name</span><input id="set-brand" maxlength="40"></label>
+        <label class="field"><span data-fr="Lien de votre page Facebook">Your Facebook page link</span><input id="set-fb" type="url" placeholder="https://facebook.com/yourpage" data-fr-placeholder="https://facebook.com/votrepage"></label>
+        <label class="field"><span data-fr="Lien du site (code QR)">Website link (QR code)</span><input id="set-site" type="url"></label>
+      </div>
+      <p class="hint" data-fr="Enregistré sur cet appareil. Le code QR mène les lecteurs à leur lecture personnelle gratuite.">Saved on this device. The QR code takes readers to their free personal reading.</p>
+    </section>
+
+    <div class="period-nav">
+      <button class="ghost icon" id="month-prev" aria-label="Previous month" data-fr-aria-label="Mois précédent">‹</button>
+      <div class="period-label"><span id="month-label"></span><small id="month-hint"></small></div>
+      <button class="ghost icon" id="month-next" aria-label="Next month" data-fr-aria-label="Mois suivant">›</button>
+    </div>
+
+    <section class="card share-actions">
+      <div class="btn-row">
+        <button class="primary" id="bundle-btn" data-fr="Télécharger le pack : 13 images + guide PDF">Download bundle: 13 images + PDF guide</button>
+      </div>
+      <div class="btn-row">
+        <button class="ghost small" id="pdf-btn" data-fr="Guide PDF seul">PDF guide only</button>
+        <span class="hint" data-fr="Touchez une carte pour télécharger cette image seule.">Tap any card to download just that image.</span>
+      </div>
+      <p class="saved-msg" id="export-msg" aria-live="polite"></p>
+      <h4 class="mt" data-fr="Texte de publication suggéré">Suggested post caption</h4>
+      <textarea id="caption" rows="6" readonly></textarea>
+      <button class="ghost small" id="copy-btn" data-fr="Copier le texte">Copy caption</button>
+    </section>
+
+    <section class="share-grid" id="share-grid" aria-label="Card previews"></section>
+  </main>
+
+  <div id="stage" aria-hidden="true"></div>
+
+  <footer class="site-footer" data-fr="Pour la réflexion et le divertissement. Les horoscopes de signe sont généraux ; une lecture personnelle utilise votre date, heure et lieu de naissance.">
+    For reflection and entertainment. Sign horoscopes are general; a personal reading uses your birth date, time and place.
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/data-fr.js"></script>
+  <script src="js/astro.js"></script>
+  <script src="js/reading.js"></script>
+  <script src="js/share.js"></script>
+</body>
+</html>

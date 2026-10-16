@@ -23,6 +23,7 @@ Enter your birthday and get your full astrological reading: a birth chart, plus 
 - **Places & Car:** relocation astrology ranks countries and US states where Jupiter, Venus or the Sun sit on an angle of your chart. You also get a car style, example models and colors for your chart, and a build-year checker for cars and houses (number and Chinese zodiac year).
 - **Optional account sync:** sign in with an email link to back up your profiles, journal, moon goals and settings and see them on all your devices. Without signing in, everything stays only in your browser.
 - **English and French:** switch with the EN/FR button in the header. French is chosen automatically when the browser is set to French, and dates use day/month/year.
+- **Horoscopes to share** (`share.html`): monthly horoscopes for all 12 signs, calculated from that month's planet positions, as 1080×1350 image cards plus a cover. One click downloads a bundle of 13 images, a PDF guide and a suggested post caption, in English or French. Your brand name, Facebook page link and a QR code to the site are printed on every card.
 - You can move to past or future days, weeks and months, and your birth details are remembered on your device.
 
 ## How it works
