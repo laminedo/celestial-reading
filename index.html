@@ -9,13 +9,25 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#090a1a">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Celestial">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
 
   <header class="site-header">
     <a class="brand" href="#" id="brand">✧ Celestial Reading</a>
-    <button class="ghost small" id="edit-btn" hidden>Edit birth details</button>
+    <div class="header-actions" hidden>
+      <select id="profile-select" class="small-select" aria-label="Switch profile" hidden></select>
+      <button class="ghost small" id="add-btn" title="Add a family member, partner or friend">+ Person</button>
+      <button class="ghost small" id="edit-btn">Edit</button>
+      <button class="ghost small" id="delete-btn" hidden>Remove</button>
+      <button class="ghost small" id="report-btn" title="Print or save your full report as a PDF">PDF report</button>
+    </div>
   </header>
 
   <main>
@@ -60,11 +72,13 @@
         </label>
         <p class="hint">Time + city unlock your rising sign and precise houses. Birth time also pins down your Moon sign — it moves about 13° a day.</p>
         <button type="submit" class="primary">Reveal my reading ✧</button>
+        <button type="button" class="link center" id="cancel-btn" hidden>Cancel</button>
       </form>
     </section>
 
     <section id="results" hidden></section>
   </main>
+  <div id="report" class="report" aria-hidden="true"></div>
 
   <footer class="site-footer">
     For reflection and entertainment. Planet positions use low-precision astronomical formulas (accurate to about 1°).
@@ -75,6 +89,8 @@
   <script src="js/reading.js"></script>
   <script src="js/destiny.js"></script>
   <script src="js/places.js"></script>
+  <script src="js/life.js"></script>
+  <script src="js/views.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

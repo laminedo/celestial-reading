@@ -407,5 +407,5 @@ const Reading = (() => {
     };
   }
 
-  return { natal, placementText, daily, weekly, monthly, ORD, PLANET_KEYS, solarHouse };
+  return { natal, placementText, daily, weekly, monthly, ORD, PLANET_KEYS, solarHouse, retrogrades, dayScores, zonedToUtc };
 })();

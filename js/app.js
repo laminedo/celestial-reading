@@ -8,7 +8,27 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
   };
 
-  const state = { birth: null, chart: null, tab: "daily", offset: 0 };
+  const state = { birth: null, chart: null, tab: "daily", offset: 0, profileId: null, adding: false };
+
+  // ---------- saved profiles (you, family, partner…) ----------
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const getProfiles = () => store.get("celestial.profiles") || [];
+  const setProfiles = (list) => store.set("celestial.profiles", list);
+  (() => {
+    // Older versions kept a single birth record.
+    const legacy = store.get("celestial.birth");
+    if (legacy && legacy.date && !getProfiles().length) {
+      const id = uid();
+      setProfiles([{ id, birth: legacy }]);
+      store.set("celestial.active", id);
+    }
+  })();
+
+  let V;
+  const views = () => V || (V = Views({
+    $, esc, store, fmtDate, tfmt, state, signChip, precisionNote, parseTypedDate, formatTypedDate,
+    profiles: getProfiles, activeId: () => state.profileId, rerender: () => render(),
+  }));
 
   // ---------- background stars ----------
   (() => {
@@ -235,19 +255,54 @@
       birth.place = { name: place.name, admin1: place.admin1 || "", country: place.country || "", lat: place.lat, lon: place.lon, timezone: place.timezone || "" };
       birth.placeLabel = cityInput.value.trim() || placeLabel(place);
     }
-    store.set("celestial.birth", birth);
-    load(birth);
+    const list = getProfiles();
+    let id = state.adding ? null : state.profileId;
+    if (id && list.some((p) => p.id === id)) list.forEach((p) => { if (p.id === id) p.birth = birth; });
+    else { id = uid(); list.push({ id, birth }); }
+    setProfiles(list);
+    store.set("celestial.active", id);
+    state.adding = false;
+    load(birth, id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  $("#edit-btn").addEventListener("click", showIntake);
+  $("#edit-btn").addEventListener("click", () => { state.adding = false; showIntake(); });
+  $("#add-btn").addEventListener("click", () => { state.adding = true; showIntake(); });
+  $("#report-btn").addEventListener("click", () => {
+    $("#report").innerHTML = views().report(state.chart);
+    window.print();
+  });
+  $("#profile-select").addEventListener("change", (e) => {
+    const p = getProfiles().find((x) => x.id === e.target.value);
+    if (p) { store.set("celestial.active", p.id); load(p.birth, p.id); }
+  });
+  $("#delete-btn").addEventListener("click", () => {
+    const p = getProfiles().find((x) => x.id === state.profileId);
+    if (!p || !window.confirm(`Remove ${p.birth.name || "this profile"} from this device?`)) return;
+    const rest = getProfiles().filter((x) => x.id !== p.id);
+    setProfiles(rest);
+    if (rest.length) { store.set("celestial.active", rest[0].id); load(rest[0].birth, rest[0].id); }
+    else { store.set("celestial.active", null); state.birth = null; state.chart = null; state.profileId = null; form.reset(); showIntake(); }
+  });
+
+  function renderHeader() {
+    const list = getProfiles();
+    const sel = $("#profile-select");
+    sel.innerHTML = list.map((p) => `<option value="${esc(p.id)}" ${p.id === state.profileId ? "selected" : ""}>${esc(p.birth.name || "Me")} · ${esc(isoToTyped(p.birth.date))}</option>`).join("");
+    sel.hidden = list.length < 2;
+    $("#delete-btn").hidden = list.length < 2;
+  }
   $("#brand").addEventListener("click", (e) => { e.preventDefault(); if (state.chart) { state.offset = 0; render(); } });
 
   function showIntake() {
     $("#intake").hidden = false;
     $("#results").hidden = true;
-    $("#edit-btn").hidden = true;
-    if (state.birth) {
+    $(".header-actions").hidden = true;
+    $("#cancel-btn").hidden = !state.chart;
+    $("#intake h1").innerHTML = state.adding ? "Add someone<br>to your circle" : "What do the planets<br>ask of you right now?";
+    if (state.adding) {
+      form.reset(); setPlace(null); cityInput.value = ""; $("#manual").open = false;
+    } else if (state.birth) {
       form.elements.name.value = state.birth.name || "";
       form.elements.date.value = isoToTyped(state.birth.date);
       form.elements.time.value = state.birth.time || "";
@@ -261,13 +316,15 @@
     }
   }
 
-  function load(birth) {
+  function load(birth, id) {
     state.birth = birth;
     state.chart = Reading.natal(birth);
     state.offset = 0;
+    state.profileId = id || null;
     $("#intake").hidden = true;
     $("#results").hidden = false;
-    $("#edit-btn").hidden = false;
+    $(".header-actions").hidden = false;
+    renderHeader();
     render();
   }
 
@@ -292,7 +349,8 @@
     const c = state.chart;
     const sun = SIGNS[c.signs.sun], moon = SIGNS[c.signs.moon];
     const greeting = c.name ? `${esc(c.name)}, you're a` : "You're a";
-    const tabs = [["daily", "Today"], ["weekly", "This Week"], ["monthly", "This Month"], ["chart", "Birth Chart"], ["career", "Career & Love"], ["luck", "Luck & Numbers"], ["places", "Places & Car"]];
+    const tabs = [["daily", "Today"], ["weekly", "This Week"], ["monthly", "This Month"], ["year", "Year Ahead"], ["chart", "Birth Chart"], ["life", "Life Cycles"],
+      ["career", "Career & Money"], ["love", "Love & Match"], ["luck", "Luck & Numbers"], ["places", "Places & Car"], ["journal", "Journal & Goals"]];
 
     $("#results").innerHTML = `
       <section class="card profile">
@@ -316,7 +374,7 @@
         ${tabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}" class="${state.tab === k ? "active" : ""}">${l}</button>`).join("")}
       </nav>
 
-      <div id="panel">${state.tab === "chart" ? renderChart(c) : state.tab === "career" ? renderCareer(c) : state.tab === "luck" ? renderLuck(c) : state.tab === "places" ? renderPlaces(c) : renderPeriod(c)}</div>
+      <div id="panel">${panel(c)}</div>
     `;
 
     $("#results").querySelectorAll("[data-tab]").forEach((b) =>
@@ -332,6 +390,25 @@
       }));
     if (state.tab === "luck") bindAddress(c);
     if (state.tab === "places") bindYear(c);
+    if (state.tab === "year") views().bindYear(c);
+    if (state.tab === "love") views().bindLove(c);
+    if (state.tab === "journal") views().bindJournal(c);
+    const active = $("#results [data-tab].active");
+    if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function panel(c) {
+    switch (state.tab) {
+      case "chart": return renderChart(c);
+      case "year": return views().yearAhead(c);
+      case "life": return views().lifeCycles(c);
+      case "career": return renderCareer(c);
+      case "love": return views().love(c);
+      case "luck": return renderLuck(c);
+      case "places": return renderPlaces(c);
+      case "journal": return views().journal(c);
+      default: return renderPeriod(c);
+    }
   }
 
   function renderPeriod(c) {
@@ -352,6 +429,7 @@
         <button class="ghost icon" data-nav="1" aria-label="Next ${unit}">›</button>
       </div>
 
+      ${R.kind === "daily" && state.offset === 0 ? views().brief(c, R) : ""}
       <section class="card hero-reading">
         <p class="eyebrow">${{ daily: "Daily", weekly: "Weekly", monthly: "Monthly" }[R.kind]} reading</p>
         <h2>${esc(R.headline)}</h2>
@@ -464,7 +542,6 @@
 
   function renderCareer(c) {
     const K = Destiny.career(c);
-    const P = Destiny.partner(c);
     return `
       <section class="card hero-reading">
         <p class="eyebrow">Your natural line of work</p>
@@ -482,23 +559,9 @@
         <section class="card">
           <h3>${esc(K.money.title)}</h3>
           <p class="small-p">${esc(K.money.text)}</p>
-          <h3 class="mt">Your ideal partner</h3>
-          <p class="overview">${esc(P.ideal)}</p>
-          <h4 class="mt">Most compatible signs</h4>
-          <div class="badges">${P.best.map(signChip).join("")}</div>
-          <h4 class="mt">Takes more work</h4>
-          <div class="badges">${P.challenge.map((i) => `<span class="badge warn">${SIGNS[i].glyph} ${SIGNS[i].name}</span>`).join("")}</div>
-          <h4 class="mt">Life Path match</h4>
-          <p class="small-p">Your Life Path reduces to ${P.lpMatch.lp}. Partners with Life Path ${P.lpMatch.numbers.join(", ")} share your number family and tend to understand you easily.</p>
-          ${P.approx ? precisionNote("partner reading with your Descendant") : ""}
         </section>
       </div>
-
-      <section class="card">
-        <h3>What you need in love</h3>
-        <ul class="placements">${P.points.map((p) => `<li><div><strong>${esc(p.title)}</strong><p>${esc(p.text)}</p></div></li>`).join("")}</ul>
-        <p class="small-p mt-s">${esc(P.loveText)}</p>
-      </section>`;
+      ${views().careerExtras(c)}`;
   }
 
   // ---------- luck & numbers ----------
@@ -832,6 +895,14 @@
   }
 
   // ---------- boot ----------
-  const saved = store.get("celestial.birth");
-  if (saved && saved.date) load(saved);
+  $("#cancel-btn").addEventListener("click", () => { state.adding = false; if (state.chart) load(state.birth, state.profileId); });
+  const activeId = store.get("celestial.active");
+  const profiles = getProfiles();
+  const saved = profiles.find((p) => p.id === activeId) || profiles[0];
+  if (saved) load(saved.birth, saved.id);
+
+  // Installable, offline-capable app.
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 })();
