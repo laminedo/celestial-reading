@@ -21,77 +21,81 @@
 
   <header class="site-header">
     <a class="brand" href="#" id="brand">✧ Celestial Reading</a>
+    <button class="ghost small lang-btn" id="lang-btn" aria-label="Language / Langue">FR</button>
     <button class="ghost small account-btn" id="account-btn">Sign in to sync</button>
     <div class="header-actions" hidden>
-      <select id="profile-select" class="small-select" aria-label="Switch profile" hidden></select>
-      <button class="ghost small" id="add-btn" title="Add a family member, partner or friend">+ Person</button>
-      <button class="ghost small" id="edit-btn">Edit</button>
-      <button class="ghost small" id="delete-btn" hidden>Remove</button>
-      <button class="ghost small" id="report-btn" title="Print or save your full report as a PDF">PDF report</button>
+      <select id="profile-select" class="small-select" aria-label="Switch profile" data-fr-aria-label="Changer de profil" hidden></select>
+      <button class="ghost small" id="add-btn" title="Add a family member, partner or friend" data-fr-title="Ajouter un proche, un partenaire ou un ami" data-fr="+ Personne">+ Person</button>
+      <button class="ghost small" id="edit-btn" data-fr="Modifier">Edit</button>
+      <button class="ghost small" id="delete-btn" data-fr="Retirer" hidden>Remove</button>
+      <button class="ghost small" id="report-btn" title="Print or save your full report as a PDF" data-fr-title="Imprimer ou enregistrer votre rapport complet en PDF" data-fr="Rapport PDF">PDF report</button>
     </div>
   </header>
 
   <main>
     <section id="intake" class="intake">
-      <p class="eyebrow">Your stars, decoded</p>
-      <h1>What do the planets<br>ask of you right now?</h1>
-      <p class="lede">Enter your birthday for your full birth chart reading, plus daily, weekly and monthly guidance on exactly what to focus on — calculated from real planetary positions.</p>
+      <p class="eyebrow" data-fr="Vos étoiles, décryptées">Your stars, decoded</p>
+      <h1 data-fr="Qu'attendent les planètes<br>de vous en ce moment ?">What do the planets<br>ask of you right now?</h1>
+      <p class="lede" data-fr="Saisissez votre date de naissance pour la lecture complète de votre thème natal, avec des conseils quotidiens, hebdomadaires et mensuels sur ce qui compte vraiment, calculés à partir des vraies positions des planètes.">Enter your birthday for your full birth chart reading, plus daily, weekly and monthly guidance on exactly what to focus on — calculated from real planetary positions.</p>
 
       <form id="birth-form" class="card form-card" autocomplete="off">
         <label>
-          <span>Your name <em>(optional)</em></span>
-          <input type="text" name="name" placeholder="e.g. Amara" maxlength="40">
+          <span data-fr="Votre prénom <em>(facultatif)</em>">Your name <em>(optional)</em></span>
+          <input type="text" name="name" placeholder="e.g. Amara" data-fr-placeholder="ex. Aminata" maxlength="40">
         </label>
         <label>
-          <span>Birth date</span>
+          <span data-fr="Date de naissance">Birth date</span>
           <input type="text" name="date" id="date-input" inputmode="numeric" autocomplete="bday"
-                 placeholder="MM / DD / YYYY" maxlength="14" required aria-describedby="date-error">
+                 placeholder="MM / DD / YYYY" data-fr-placeholder="JJ / MM / AAAA" maxlength="14" required aria-describedby="date-error">
         </label>
         <p class="field-error" id="date-error" aria-live="polite"></p>
         <label>
-          <span>Birth time <em>(optional)</em></span>
+          <span data-fr="Heure de naissance <em>(facultatif)</em>">Birth time <em>(optional)</em></span>
           <input type="time" name="time">
         </label>
         <div class="city-field">
-          <label for="city-input"><span>Birth city <em>(optional)</em></span></label>
-          <input type="text" id="city-input" name="city" placeholder="Start typing, e.g. Dakar" autocomplete="off"
+          <label for="city-input"><span data-fr="Ville de naissance <em>(facultatif)</em>">Birth city <em>(optional)</em></span></label>
+          <input type="text" id="city-input" name="city" placeholder="Start typing, e.g. Dakar" data-fr-placeholder="Commencez à taper, ex. Dakar" autocomplete="off"
                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-list">
           <ul id="city-list" class="city-list" role="listbox" hidden></ul>
           <p class="place-info" id="place-info"></p>
         </div>
         <details class="manual" id="manual">
-          <summary>Can't find your city? Enter coordinates</summary>
+          <summary data-fr="Ville introuvable ? Saisissez les coordonnées">Can't find your city? Enter coordinates</summary>
           <div class="row">
             <label><span>Latitude</span><input type="number" name="lat" step="any" min="-90" max="90" placeholder="14.69"></label>
             <label><span>Longitude</span><input type="number" name="lon" step="any" min="-180" max="180" placeholder="-17.44"></label>
           </div>
-          <p class="hint">North and east are positive; south and west are negative.</p>
+          <p class="hint" data-fr="Nord et est sont positifs ; sud et ouest sont négatifs.">North and east are positive; south and west are negative.</p>
         </details>
         <label>
-          <span>Birth time zone</span>
+          <span data-fr="Fuseau horaire de naissance">Birth time zone</span>
           <select name="tz" id="tz-select"></select>
         </label>
-        <p class="hint">Time + city unlock your rising sign and precise houses. Birth time also pins down your Moon sign — it moves about 13° a day.</p>
-        <button type="submit" class="primary">Reveal my reading ✧</button>
-        <button type="button" class="link center" id="cancel-btn" hidden>Cancel</button>
+        <p class="hint" data-fr="L'heure et la ville révèlent votre ascendant et des maisons précises. L'heure précise aussi votre signe lunaire : la Lune avance d'environ 13° par jour.">Time + city unlock your rising sign and precise houses. Birth time also pins down your Moon sign — it moves about 13° a day.</p>
+        <button type="submit" class="primary" data-fr="Révéler ma lecture ✧">Reveal my reading ✧</button>
+        <button type="button" class="link center" id="cancel-btn" data-fr="Annuler" hidden>Cancel</button>
       </form>
     </section>
 
     <section id="results" hidden></section>
   </main>
   <div id="report" class="report" aria-hidden="true"></div>
-  <dialog id="account-dialog" class="dialog" aria-label="Account and sync">
-    <button class="ghost icon close" id="account-close" aria-label="Close">×</button>
+  <dialog id="account-dialog" class="dialog" aria-label="Account and sync" data-fr-aria-label="Compte et synchronisation">
+    <button class="ghost icon close" id="account-close" aria-label="Close" data-fr-aria-label="Fermer">×</button>
     <div id="account-body"></div>
   </dialog>
 
-  <footer class="site-footer">
+  <footer class="site-footer" data-fr="Pour la réflexion et le divertissement. Les positions des planètes utilisent des formules astronomiques simplifiées (précises à environ 1°).">
     For reflection and entertainment. Planet positions use low-precision astronomical formulas (accurate to about 1°).
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/data-fr.js"></script>
+  <script src="js/content-fr.js"></script>
   <script src="js/astro.js"></script>
   <script src="js/reading.js"></script>
   <script src="js/destiny.js"></script>

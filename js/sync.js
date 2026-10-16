@@ -119,7 +119,7 @@ const Sync = (() => {
       if (remoteChanged) emit("remote");
       setStatus("synced");
     } catch (e) {
-      setStatus("error", navigator.onLine === false ? "You're offline. Changes will sync when you reconnect." : (e && e.message) || "Sync failed");
+      setStatus("error", navigator.onLine === false ? t("You're offline. Changes will sync when you reconnect.", "Vous êtes hors ligne. Vos changements seront synchronisés à la reconnexion.") : (e && e.message) || t("Sync failed", "Échec de la synchronisation"));
     } finally {
       busy = false;
       if (again) { again = false; schedule(500); }
@@ -140,7 +140,7 @@ const Sync = (() => {
 
   // ---------- auth ----------
   async function init() {
-    if (!window.supabase || !window.supabase.createClient) { setStatus("unavailable", "Sync is unavailable offline."); return; }
+    if (!window.supabase || !window.supabase.createClient) { setStatus("unavailable", t("Sync is unavailable offline.", "La synchronisation est indisponible hors ligne.")); return; }
     client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" },
     });
@@ -158,7 +158,7 @@ const Sync = (() => {
   }
 
   async function signIn(email) {
-    if (!client) throw new Error("Sync is unavailable right now. Check your connection and reload.");
+    if (!client) throw new Error(t("Sync is unavailable right now. Check your connection and reload.", "La synchronisation est indisponible. Vérifiez votre connexion et rechargez la page."));
     const redirect = location.href.split("#")[0].split("?")[0];
     const { error } = await client.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect, shouldCreateUser: true } });
     if (error) throw error;

@@ -31,13 +31,13 @@ const Places = (() => {
   ];
 
   const WEIGHT = { jupiter: 3, venus: 2.5, sun: 2, moon: 1, mercury: 1, mars: -1.5, saturn: -2 };
-  const ANGLE_THEME = {
+  const ANGLE_THEME = FR ? FR_CONTENT.angleTheme : {
     MC: { name: "career line", text: "career, reputation and public success" },
     ASC: { name: "rising line", text: "confidence, health and personal magnetism" },
     DSC: { name: "partner line", text: "love, marriage and business partners" },
     IC: { name: "home line", text: "home, family and putting down roots" },
   };
-  const PLANET_GIFT = {
+  const PLANET_GIFT = FR ? FR_CONTENT.planetGift : {
     jupiter: "luck, money and growth", venus: "love, beauty and easy income", sun: "recognition and vitality",
     moon: "belonging and public appeal", mercury: "networking, trade and ideas", mars: "drive, but also conflict and stress",
     saturn: "hard work, delays and heavy responsibility",
@@ -64,12 +64,15 @@ const Places = (() => {
     hits.sort((x, y) => Math.abs(WEIGHT[y.planet]) * y.strength - Math.abs(WEIGHT[x.planet]) * x.strength);
     const good = hits.filter((h) => WEIGHT[h.planet] > 0);
     const hard = hits.filter((h) => WEIGHT[h.planet] < 0);
-    const describe = (h) => `${PLANETS[h.planet].name} on your ${ANGLE_THEME[h.angle].name}: ${PLANET_GIFT[h.planet]} through ${ANGLE_THEME[h.angle].text}`;
+    const describe = (h) => t(`${PLANETS[h.planet].name} on your ${ANGLE_THEME[h.angle].name}: ${PLANET_GIFT[h.planet]} through ${ANGLE_THEME[h.angle].text}`,
+      `${PLANETS[h.planet].name} sur votre ${ANGLE_THEME[h.angle].name} : ${PLANET_GIFT[h.planet]} par ${ANGLE_THEME[h.angle].text}`);
+    const label = FR ? FR_CONTENT.countries[name] || FR_CONTENT.states[name] || name : name;
     return {
-      name, score, hits,
-      text: good.length ? describe(good[0]) + (good[1] ? `. Also, ${describe(good[1])}` : "") + "."
-        : hard.length ? describe(hard[0]) + "." : "No planets on your angles here: a neutral, quiet place for you.",
-      caution: good.length && hard.length ? `${PLANETS[hard[0].planet].name} is also active here, so expect some ${PLANET_GIFT[hard[0].planet].replace(/^drive, but also /, "")}.` : "",
+      name: label, score, hits,
+      text: good.length ? describe(good[0]) + (good[1] ? t(`. Also, ${describe(good[1])}`, `. Aussi : ${describe(good[1])}`) : "") + "."
+        : hard.length ? describe(hard[0]) + "." : t("No planets on your angles here: a neutral, quiet place for you.", "Aucune planète sur vos angles ici : un lieu neutre et calme pour vous."),
+      caution: good.length && hard.length ? t(`${PLANETS[hard[0].planet].name} is also active here, so expect some ${PLANET_GIFT[hard[0].planet].replace(/^drive, but also /, "")}.`,
+        `${PLANETS[hard[0].planet].name} est aussi actif ici : attendez-vous à un peu de ${PLANET_GIFT[hard[0].planet].replace(/^énergie, mais aussi /, "")}.`) : "",
     };
   }
 
@@ -86,7 +89,7 @@ const Places = (() => {
   }
 
   // ---------- cars ----------
-  const CAR = {
+  const CAR = FR ? FR_CONTENT.car : {
     Fire: { type: "Sporty and powerful", why: "Fire wants speed, presence and fun behind the wheel.",
       examples: ["Ford Mustang", "Chevrolet Camaro", "Dodge Challenger", "BMW M3", "Porsche 911", "Kia Stinger"] },
     Earth: { type: "Reliable, solid and built to last", why: "Earth values durability, resale value and a car that never lets you down.",
@@ -96,32 +99,30 @@ const Places = (() => {
     Water: { type: "Comfortable, safe and protective", why: "Water wants a calm, quiet cabin that feels like a safe space for you and your people.",
       examples: ["Toyota Highlander Hybrid", "Lexus RX", "Volvo XC90", "Honda Odyssey", "Subaru Outback", "Toyota Sienna"] },
   };
-  const DRIVE = {
+  const DRIVE = FR ? FR_CONTENT.drive : {
     Fire: "you drive fast and decisively. Pick strong safety features and respect the speed limit.",
     Earth: "you drive steadily and carefully. Comfort and fuel economy matter to you.",
     Air: "you multitask on the road. Good driver-assist and a great sound system suit you.",
     Water: "you drive by feel and mood. A quiet, smooth ride keeps you calm.",
   };
 
-  const CHINESE_TRINES = [["Rat", "Dragon", "Monkey"], ["Ox", "Snake", "Rooster"], ["Tiger", "Horse", "Dog"], ["Rabbit", "Goat", "Pig"]];
-  const CHINESE_CLASH = { Rat: "Horse", Ox: "Goat", Tiger: "Monkey", Rabbit: "Rooster", Dragon: "Dog", Snake: "Pig",
-    Horse: "Rat", Goat: "Ox", Monkey: "Tiger", Rooster: "Rabbit", Dog: "Dragon", Pig: "Snake" };
-  const animalOfYear = (y) => CHINESE[(((y - 4) % 12) + 12) % 12][0];
+  // Chinese zodiac by index (0 = Rat … 11 = Pig): allies come in trines, clashes sit 6 apart.
+  const animalIndex = (y) => (((y - 4) % 12) + 12) % 12;
 
   // Build year of a car or house → single digit + Chinese year animal, compared with your chart.
   function buildYear(chart, year) {
     const y = Number(year);
-    if (!Number.isInteger(y) || y < 1800 || y > 2100) return { error: "Enter a 4-digit year, e.g. 2019." };
+    if (!Number.isInteger(y) || y < 1800 || y > 2100) return { error: t("Enter a 4-digit year, e.g. 2019.", "Saisissez une année à 4 chiffres, par ex. 2019.") };
     const r = Destiny.reduce(y);
     const value = r.value;
-    const match = Destiny.matchHome(value, chart, "this year");
-    const animal = animalOfYear(y);
-    const mine = chart.chinese.animal;
-    const trine = CHINESE_TRINES.find((t) => t.includes(mine));
-    const zodiac = animal === mine ? { level: "great", text: `${y} is a ${animal} year, the same as your own sign.` }
-      : trine.includes(animal) ? { level: "good", text: `${y} is a ${animal} year, a natural ally of your ${mine} sign.` }
-      : CHINESE_CLASH[mine] === animal ? { level: "bad", text: `${y} is a ${animal} year, which traditionally clashes with your ${mine} sign.` }
-      : { level: "ok", text: `${y} is a ${animal} year: neutral for your ${mine} sign.` };
+    const match = Destiny.matchHome(value, chart, t("this year", "cette année"));
+    const ai = animalIndex(y), mi = chart.chinese.index;
+    const animal = CHINESE[ai][0], mine = CHINESE[mi][0];
+    const du = (x) => (x === "Chèvre" ? "de la " : "du ") + x;
+    const zodiac = ai === mi ? { level: "great", text: t(`${y} is a ${animal} year, the same as your own sign.`, `${y} est une année ${du(animal)}, comme votre propre signe.`) }
+      : (ai - mi + 12) % 4 === 0 ? { level: "good", text: t(`${y} is a ${animal} year, a natural ally of your ${mine} sign.`, `${y} est une année ${du(animal)}, un allié naturel de votre signe ${du(mine)}.`) }
+      : (ai - mi + 12) % 12 === 6 ? { level: "bad", text: t(`${y} is a ${animal} year, which traditionally clashes with your ${mine} sign.`, `${y} est une année ${du(animal)}, traditionnellement en conflit avec votre signe ${du(mine)}.`) }
+      : { level: "ok", text: t(`${y} is a ${animal} year: neutral for your ${mine} sign.`, `${y} est une année ${du(animal)} : neutre pour votre signe ${du(mine)}.`) };
     return { year: y, value, work: r.steps, title: Destiny.HOME_NUMBERS[value][0], match, zodiac };
   }
 
@@ -145,7 +146,7 @@ const Places = (() => {
     return {
       main: { element: main, ...CAR[main] },
       alt: venusEl !== main ? { element: venusEl, ...CAR[venusEl] } : null,
-      drive: `With Mars in ${SIGNS[chart.signs.mars].name}, ${DRIVE[marsEl]}`,
+      drive: t(`With Mars in ${SIGNS[chart.signs.mars].name}, ${DRIVE[marsEl]}`, `Avec Mars en ${SIGNS[chart.signs.mars].name}, ${DRIVE[marsEl]}`),
       colors,
       years: goodYears(chart, now - 12, now + 1).slice(0, 6),
     };

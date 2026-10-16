@@ -22,6 +22,7 @@ Enter your birthday and get your full astrological reading: a birth chart, plus 
 - **Luck & Numbers:** the best planetary hours each day to start important work, your luckiest days for the next 60 days, the best months of the coming year, and Jupiter's lucky years through your houses. Also your personal numbers and a house number calculator that reduces any address to one digit and compares it with your Life Path. Lottery and games of chance stay random: the app says so and doesn't claim to change the odds.
 - **Places & Car:** relocation astrology ranks countries and US states where Jupiter, Venus or the Sun sit on an angle of your chart. You also get a car style, example models and colors for your chart, and a build-year checker for cars and houses (number and Chinese zodiac year).
 - **Optional account sync:** sign in with an email link to back up your profiles, journal, moon goals and settings and see them on all your devices. Without signing in, everything stays only in your browser.
+- **English and French:** switch with the EN/FR button in the header. French is chosen automatically when the browser is set to French, and dates use day/month/year.
 - You can move to past or future days, weeks and months, and your birth details are remembered on your device.
 
 ## How it works

@@ -20,6 +20,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -421,3 +422,4 @@ textarea:focus { border-color: var(--violet); outline: none; }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .ghost.danger { color: var(--warn); border-color: rgba(242, 160, 123, 0.4); }
 .warn-text, .saved-msg.error { color: var(--warn); }
+.lang-btn { font-weight: 600; letter-spacing: 0.06em; min-width: 42px; }

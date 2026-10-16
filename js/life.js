@@ -12,7 +12,7 @@ const Life = (() => {
   const yearsBetween = (a, b) => (b - a) / (365.2422 * DAY);
 
   // ---------- life cycles ----------
-  const SATURN_STEPS = {
+  const SATURN_STEPS = FR ? FR_CONTENT.saturnSteps : {
     0: { title: "Saturn return", what: "Saturn comes back to where it was when you were born. It's the classic coming-of-age checkpoint: what isn't built on solid ground gets tested, and what's real gets stronger.",
       prep: ["Decide what you truly want for the next 30 years, not what others expect", "Commit to one path: career, relationship or home", "Pay down debt and build an emergency fund", "Drop habits and commitments that no longer fit"] },
     90: { title: "Saturn square (waxing)", what: "A test of the foundations you built since your last Saturn checkpoint. Obstacles show where you need more structure.",
@@ -22,7 +22,7 @@ const Life = (() => {
     270: { title: "Saturn square (waning)", what: "A clearing phase before the next return. Old structures you've outgrown start to fall away.",
       prep: ["Let go of what's finished", "Simplify commitments", "Start quietly preparing your next chapter"] },
   };
-  const JUPITER_RETURN = {
+  const JUPITER_RETURN = FR ? FR_CONTENT.jupiterReturn : {
     title: "Jupiter return",
     what: "Jupiter returns to its birth position every 12 years and opens a new cycle of growth, luck and opportunity.",
     prep: ["Say yes to opportunities that expand you", "Start a new learning, travel or business chapter", "Set big 12-year goals"],
@@ -35,6 +35,7 @@ const Life = (() => {
     { age: 63, title: "Uranus square (waning)", what: "A second wave of freedom: retirement planning, new interests and a lighter life.", prep: ["Plan finances for the next chapter", "Pick up new hobbies", "Stay socially active"] },
     { age: 84, title: "Uranus return", what: "Uranus completes a full orbit: a life review and a time to pass on wisdom.", prep: ["Record your story for family", "Celebrate a full life", "Stay curious"] },
   ];
+  if (FR) OUTER.forEach((o, i) => Object.assign(o, FR_CONTENT.outer[i]));
 
   // Moments when a planet's transit hits natal longitude + target angle; retrograde passes grouped together.
   function aspectPasses(planet, natalLon, target, from, to) {
@@ -97,7 +98,7 @@ const Life = (() => {
     return solarReturnMoment(chart, y) <= now ? y : y - 1;
   }
 
-  const SR_HOUSE_THEME = {
+  const SR_HOUSE_THEME = FR ? FR_CONTENT.srHouseTheme : {
     1: "a personal reinvention year: your image, health and independence take center stage",
     2: "a money year: earning, saving and building self-worth",
     3: "a year of learning, writing, networking and short trips",
@@ -121,15 +122,23 @@ const Life = (() => {
     const base = rising !== null ? rising : chart.houseSign;
     const h = (s) => Reading.solarHouse(s, base);
     const sunH = h(sign("sun"));
-    const themes = [
+    const hs = (k) => HOUSES[h(sign(k))].short;
+    const themes = FR ? [
+      { title: `Thème principal : Soleil dans votre ${ORD[sunH]} maison`, text: `C'est ${SR_HOUSE_THEME[sunH]}.` },
+      { title: `Côté cœur : Lune en ${SIGNS[sign("moon")].name}, ${ORD[h(sign("moon"))]} maison`, text: `Votre cœur se tourne vers ${hs("moon")}. ${SIGNS[sign("moon")].moon}` },
+      { title: `Croissance : Jupiter dans votre ${ORD[h(sign("jupiter"))]} maison`, text: `La chance et l'expansion passent par ${hs("jupiter")}. Dites oui ici.` },
+      { title: `Effort : Saturne dans votre ${ORD[h(sign("saturn"))]} maison`, text: `Travail et patience sont nécessaires autour ${de(hs("saturn"))}. C'est là que se construisent des résultats durables.` },
+      { title: `Amour : Vénus en ${SIGNS[sign("venus")].name}, ${ORD[h(sign("venus"))]} maison`, text: `La romance et le plaisir passent par ${hs("venus")}.` },
+      { title: `Énergie : Mars dans votre ${ORD[h(sign("mars"))]} maison`, text: `Mettez votre énergie dans ${hs("mars")}.` },
+    ] : [
       { title: `Main theme: Sun in your ${ORD[sunH]} house`, text: `This is ${SR_HOUSE_THEME[sunH]}.` },
-      { title: `Emotional focus: Moon in ${SIGNS[sign("moon")].name}, ${ORD[h(sign("moon"))]} house`, text: `Your heart is drawn to ${HOUSES[h(sign("moon"))].short}. ${SIGNS[sign("moon")].moon}` },
-      { title: `Growth: Jupiter in your ${ORD[h(sign("jupiter"))]} house`, text: `Luck and expansion come through ${HOUSES[h(sign("jupiter"))].short}. Say yes here.` },
-      { title: `Effort: Saturn in your ${ORD[h(sign("saturn"))]} house`, text: `Hard work and patience are needed around ${HOUSES[h(sign("saturn"))].short}. This is where lasting results get built.` },
-      { title: `Love: Venus in ${SIGNS[sign("venus")].name}, ${ORD[h(sign("venus"))]} house`, text: `Romance and pleasure flow through ${HOUSES[h(sign("venus"))].short}.` },
-      { title: `Drive: Mars in your ${ORD[h(sign("mars"))]} house`, text: `Put your energy into ${HOUSES[h(sign("mars"))].short}.` },
+      { title: `Emotional focus: Moon in ${SIGNS[sign("moon")].name}, ${ORD[h(sign("moon"))]} house`, text: `Your heart is drawn to ${hs("moon")}. ${SIGNS[sign("moon")].moon}` },
+      { title: `Growth: Jupiter in your ${ORD[h(sign("jupiter"))]} house`, text: `Luck and expansion come through ${hs("jupiter")}. Say yes here.` },
+      { title: `Effort: Saturn in your ${ORD[h(sign("saturn"))]} house`, text: `Hard work and patience are needed around ${hs("saturn")}. This is where lasting results get built.` },
+      { title: `Love: Venus in ${SIGNS[sign("venus")].name}, ${ORD[h(sign("venus"))]} house`, text: `Romance and pleasure flow through ${hs("venus")}.` },
+      { title: `Drive: Mars in your ${ORD[h(sign("mars"))]} house`, text: `Put your energy into ${hs("mars")}.` },
     ];
-    if (rising !== null) themes.unshift({ title: `Year rising: ${SIGNS[rising].name}`, text: `The year's overall tone. ${RISING[rising]}` });
+    if (rising !== null) themes.unshift({ title: t(`Year rising: ${SIGNS[rising].name}`, `Ascendant de l'année : ${SIGNS[rising].name}`), text: t(`The year's overall tone. ${RISING[rising]}`, `La tonalité générale de l'année. ${RISING[rising]}`) });
     const months = Destiny.luckyMonths(chart, when);
     const retros = Reading.retrogrades(when, new Date(when.getTime() + 365 * DAY));
     const [, bm, bd] = chart.when.toISOString().slice(0, 10).split("-").map(Number);
@@ -151,12 +160,12 @@ const Life = (() => {
     });
   }
 
-  const RETRO_CHECK = {
+  const RETRO_CHECK = FR ? FR_CONTENT.retroCheck : {
     mercury: ["Back up phones and computers", "Reread messages and contracts before sending or signing", "Allow extra travel time and confirm bookings", "Good time to revise, edit and reconnect with old contacts"],
     venus: ["Delay big beauty changes or luxury purchases", "Reflect on what you want in love and money", "Old flames may return: decide calmly"],
     mars: ["Avoid starting fights or risky new ventures", "Rework existing plans instead of launching", "Be careful with sharp tools, driving and exercise"],
   };
-  const ECLIPSE_CHECK = {
+  const ECLIPSE_CHECK = FR ? FR_CONTENT.eclipseCheck : {
     solar: ["Write intentions for a fresh start in this life area", "Expect sudden beginnings: stay flexible", "Wait a few days before major launches while the energy settles"],
     lunar: ["Let go of what's finished in this life area", "Expect endings or revelations", "Avoid big emotional decisions on the day itself"],
   };
@@ -191,10 +200,10 @@ const Life = (() => {
 
   // ---------- career timing ----------
   const ACTIVITIES = {
-    interview: { label: "Job interviews & meetings", icon: "◎", hours: ["sun", "mercury", "jupiter"] },
-    raise: { label: "Asking for a raise or negotiating pay", icon: "◆", hours: ["jupiter", "venus", "sun"] },
-    launch: { label: "Launching a business or project", icon: "▲", hours: ["jupiter", "sun", "mars"] },
-    contract: { label: "Signing contracts", icon: "✎", hours: ["mercury", "jupiter", "venus"] },
+    interview: { label: t("Job interviews & meetings", FR_CONTENT.activities.interview), icon: "◎", hours: ["sun", "mercury", "jupiter"] },
+    raise: { label: t("Asking for a raise or negotiating pay", FR_CONTENT.activities.raise), icon: "◆", hours: ["jupiter", "venus", "sun"] },
+    launch: { label: t("Launching a business or project", FR_CONTENT.activities.launch), icon: "▲", hours: ["jupiter", "sun", "mars"] },
+    contract: { label: t("Signing contracts", FR_CONTENT.activities.contract), icon: "✎", hours: ["mercury", "jupiter", "venus"] },
   };
 
   function careerTiming(chart, place, from = new Date(), days = 60) {
@@ -225,18 +234,18 @@ const Life = (() => {
           const hrs = ph.hours.filter((h) => h.from.getHours() >= 8 && h.from.getHours() < 18 && a.hours.includes(h.planet));
           const hour = hrs.sort((p, q) => q.score - p.score)[0] || ph.best[0];
           const why = [];
-          if (key === "contract" || key === "interview") why.push(x.mercRx ? "Mercury retrograde" : "Mercury direct");
-          why.push(`Moon in your ${ORD[x.mh]} house`);
-          if (waxing(x)) why.push("waxing Moon");
+          if (key === "contract" || key === "interview") why.push(x.mercRx ? t("Mercury retrograde", "Mercure rétrograde") : t("Mercury direct", "Mercure direct"));
+          why.push(t(`Moon in your ${ORD[x.mh]} house`, `Lune dans votre ${ORD[x.mh]} maison`));
+          if (waxing(x)) why.push(t("waxing Moon", "Lune croissante"));
           return { date: x.date, hour, why: why.join(" · ") };
         });
       const mercWarn = key === "contract" && info.some((x) => x.mercRx);
-      return { key, ...a, picks, note: mercWarn ? "Mercury is retrograde for part of this window, so those days are skipped for contracts." : "" };
+      return { key, ...a, picks, note: mercWarn ? t("Mercury is retrograde for part of this window, so those days are skipped for contracts.", "Mercure est rétrograde pendant une partie de cette période : ces jours sont exclus pour les contrats.") : "" };
     });
   }
 
   // ---------- money style ----------
-  const MONEY_STYLE = {
+  const MONEY_STYLE = FR ? FR_CONTENT.moneyStyle : {
     Fire: { name: "The Bold Earner", text: "You make money through initiative, courage and going after opportunities. You can earn fast, and spend fast too.",
       blind: "Impulse purchases and risky bets when you're bored or excited.",
       tips: ["Use a 48-hour rule before any non-essential purchase", "Automate savings on payday so it happens before you can spend it", "Put a fixed share of income into long-term investing so your risk appetite works for you"] },
@@ -256,17 +265,21 @@ const Life = (() => {
     const el = SIGNS[second].element;
     return {
       ...MONEY_STYLE[el], element: el, second, eighth,
-      venus: `With Venus in ${SIGNS[chart.signs.venus].name}, you love spending on things connected to ${SIGNS[chart.signs.venus].domain}.`,
-      jupiter: `Jupiter in ${SIGNS[chart.signs.jupiter].name} shows where money grows most easily: ${SIGNS[chart.signs.jupiter].domain}.`,
-      saturn: `Saturn in ${SIGNS[chart.signs.saturn].name} is your money lesson: discipline around ${SIGNS[chart.signs.saturn].domain} pays off over time.`,
-      shared: `Your 8th house of shared money is ${SIGNS[eighth].name}: you handle loans, investments and joint finances ${SIGNS[eighth].style}.`,
+      venus: t(`With Venus in ${SIGNS[chart.signs.venus].name}, you love spending on things connected to ${SIGNS[chart.signs.venus].domain}.`,
+        `Avec Vénus en ${SIGNS[chart.signs.venus].name}, vous aimez dépenser pour ce qui touche ${au(SIGNS[chart.signs.venus].domain)}.`),
+      jupiter: t(`Jupiter in ${SIGNS[chart.signs.jupiter].name} shows where money grows most easily: ${SIGNS[chart.signs.jupiter].domain}.`,
+        `Jupiter en ${SIGNS[chart.signs.jupiter].name} montre où l'argent fructifie le plus facilement : ${SIGNS[chart.signs.jupiter].domain}.`),
+      saturn: t(`Saturn in ${SIGNS[chart.signs.saturn].name} is your money lesson: discipline around ${SIGNS[chart.signs.saturn].domain} pays off over time.`,
+        `Saturne en ${SIGNS[chart.signs.saturn].name} est votre leçon d'argent : la discipline autour ${de(SIGNS[chart.signs.saturn].domain)} paie avec le temps.`),
+      shared: t(`Your 8th house of shared money is ${SIGNS[eighth].name}: you handle loans, investments and joint finances ${SIGNS[eighth].style}.`,
+        `Votre 8e maison, celle de l'argent partagé, est en ${SIGNS[eighth].name} : vous gérez prêts, placements et finances communes ${SIGNS[eighth].style}.`),
       approx: chart.rising === null,
     };
   }
 
   // ---------- compatibility (synastry) ----------
   const FIT = [1, -0.25, 1, -0.75, 1.5, -0.5, 0.75];
-  const ELEMENT_PAIR = {
+  const ELEMENT_PAIR = FR ? FR_CONTENT.elementPair : {
     "Fire-Fire": "Two fires make a passionate, energetic match. Keep competition playful.",
     "Fire-Air": "Air feeds fire: lots of fun, ideas and adventure together.",
     "Fire-Earth": "Fire brings excitement and earth brings stability. You need patience with each other's pace.",
@@ -278,7 +291,7 @@ const Life = (() => {
     "Air-Water": "Head meets heart. Air learns to feel and water learns to talk. It takes effort but grows you both.",
     "Water-Water": "Deep emotional understanding, almost telepathic. Watch out for shared moodiness.",
   };
-  const TIPS = {
+  const TIPS = FR ? FR_CONTENT.tips : {
     attraction: "Keep romance alive with regular dates and physical affection. Chemistry needs tending here.",
     communication: "Slow down conversations, repeat back what you heard, and don't assume. You process information differently.",
     emotional: "Ask what the other needs when they're upset. You comfort yourselves in different ways.",
@@ -290,10 +303,10 @@ const Life = (() => {
     const g = (x, y) => FIT[signDist(b.signs[x], a.signs[y])];
     const pct = (v) => Math.max(15, Math.min(98, Math.round(55 + 30 * v)));
     const cats = {
-      attraction: { label: "Attraction & chemistry", v: (f("venus", "mars") + g("venus", "mars") + 0.5 * f("venus", "venus")) / 2.5 },
-      communication: { label: "Communication", v: (f("mercury", "mercury") + 0.5 * f("mercury", "sun") + 0.5 * g("mercury", "sun")) / 2 },
-      emotional: { label: "Emotional bond", v: (f("moon", "moon") + f("sun", "moon") + g("sun", "moon")) / 3 },
-      longterm: { label: "Long-term stability", v: (f("sun", "sun") + 0.5 * f("saturn", "sun") + 0.5 * g("saturn", "sun") + 0.5 * f("jupiter", "sun") + 0.5 * g("jupiter", "sun")) / 3 },
+      attraction: { label: t("Attraction & chemistry", "Attirance et alchimie"), v: (f("venus", "mars") + g("venus", "mars") + 0.5 * f("venus", "venus")) / 2.5 },
+      communication: { label: t("Communication", "Communication"), v: (f("mercury", "mercury") + 0.5 * f("mercury", "sun") + 0.5 * g("mercury", "sun")) / 2 },
+      emotional: { label: t("Emotional bond", "Lien émotionnel"), v: (f("moon", "moon") + f("sun", "moon") + g("sun", "moon")) / 3 },
+      longterm: { label: t("Long-term stability", "Stabilité à long terme"), v: (f("sun", "sun") + 0.5 * f("saturn", "sun") + 0.5 * g("saturn", "sun") + 0.5 * f("jupiter", "sun") + 0.5 * g("jupiter", "sun")) / 3 },
     };
     Object.values(cats).forEach((c) => (c.pct = pct(c.v)));
     const overall = Math.round(Object.values(cats).reduce((s, c) => s + c.pct, 0) / 4);
@@ -309,10 +322,10 @@ const Life = (() => {
       strengths: ranked.filter(([, c]) => c.pct >= 65).map(([, c]) => c.label),
       friction: ranked.filter(([, c]) => c.pct < 50).map(([, c]) => c.label),
       tips: ranked.slice(-2).map(([k]) => TIPS[k]),
-      lifePath: la === lb ? `You share Life Path ${la}: you understand each other's purpose instinctively.`
-        : sameGroup ? `Life Paths ${la} and ${lb} are in the same number family: an easy, natural rhythm.`
-        : `Life Paths ${la} and ${lb} come from different number families: you complement each other but see life differently.`,
-      verdict: overall >= 75 ? "A naturally strong match" : overall >= 60 ? "A good match with real potential" : overall >= 48 ? "A workable match that takes effort" : "A challenging match that will need lots of understanding",
+      lifePath: la === lb ? t(`You share Life Path ${la}: you understand each other's purpose instinctively.`, `Vous partagez le chemin de vie ${la} : vous comprenez instinctivement la mission de l'autre.`)
+        : sameGroup ? t(`Life Paths ${la} and ${lb} are in the same number family: an easy, natural rhythm.`, `Les chemins de vie ${la} et ${lb} sont de la même famille de nombres : un rythme naturel et facile.`)
+        : t(`Life Paths ${la} and ${lb} come from different number families: you complement each other but see life differently.`, `Les chemins de vie ${la} et ${lb} viennent de familles de nombres différentes : vous vous complétez mais voyez la vie autrement.`),
+      verdict: overall >= 75 ? t("A naturally strong match", "Une entente naturellement forte") : overall >= 60 ? t("A good match with real potential", "Une belle entente au vrai potentiel") : overall >= 48 ? t("A workable match that takes effort", "Une entente possible qui demande des efforts") : t("A challenging match that will need lots of understanding", "Une entente difficile qui demandera beaucoup de compréhension"),
     };
   }
 

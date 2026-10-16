@@ -15,7 +15,7 @@ const Destiny = (() => {
   const RULER = ["mars", "venus", "mercury", "moon", "sun", "mercury", "venus", "mars", "jupiter", "saturn", "saturn", "jupiter"];
 
   // ---------- content ----------
-  const CAREER_FIELDS = [
+  const CAREER_FIELDS = FR ? FR_CONTENT.careerFields : [
     ["Entrepreneur or founder", "Sales and business development", "Emergency services, military or law enforcement", "Athletics, coaching or fitness", "Surgery or physical therapy", "Project launches and turnarounds"],
     ["Finance, banking or wealth management", "Real estate and property", "Food, hospitality or culinary arts", "Design, fashion or luxury goods", "Music and the arts", "Agriculture, landscaping or interiors"],
     ["Writing, journalism or publishing", "Marketing, PR and social media", "Teaching and training", "Technology and software", "Sales and brokerage", "Translation, travel or event hosting"],
@@ -30,14 +30,14 @@ const Destiny = (() => {
     ["Arts, music, film or photography", "Healing, nursing or therapy", "Spiritual or charitable work", "Ocean, travel or hospitality", "Psychology and counseling", "Creative writing and storytelling"],
   ];
 
-  const ELEMENT_WORK = {
+  const ELEMENT_WORK = FR ? FR_CONTENT.elementWork : {
     Fire: "You work best with momentum, visible goals and room to lead. Long stretches of routine drain you, so choose roles where you can start things and see results quickly.",
     Earth: "You work best where effort builds real, measurable value over time. Stability, clear expectations and tangible results bring out your best.",
     Air: "You work best around people and ideas: meetings, writing, problem-solving and networking. You need variety and mental stimulation to stay engaged.",
     Water: "You work best where empathy and intuition matter. Caring, creative or behind-the-scenes roles let you read people and situations better than anyone.",
   };
 
-  const LP_WORK = {
+  const LP_WORK = FR ? FR_CONTENT.lpWork : {
     1: "Life Path 1 favors being your own boss or leading a team.",
     2: "Life Path 2 favors partnership roles: mediation, support and collaboration.",
     3: "Life Path 3 favors creative, expressive and public-facing work.",
@@ -52,7 +52,7 @@ const Destiny = (() => {
     33: "Life Path 33 favors teaching, healing and guiding others.",
   };
 
-  const PARTNER = [
+  const PARTNER = FR ? FR_CONTENT.partner : [
     "brave, direct and full of energy: someone who takes initiative and keeps life exciting",
     "steady, loyal and affectionate: someone who shows love through presence, comfort and consistency",
     "witty, curious and talkative: someone who keeps you laughing and always has something new to discuss",
@@ -67,7 +67,7 @@ const Destiny = (() => {
     "gentle, intuitive and compassionate: someone dreamy and kind who understands you without words",
   ];
 
-  const HOME_NUMBERS = {
+  const HOME_NUMBERS = FR ? FR_CONTENT.homeNumbers : {
     1: ["Independence and new beginnings", "Great for starting a business, a career change or living solo. Ambition gets a boost here."],
     2: ["Partnership and peace", "Good for couples and harmony. A gentle, cooperative energy that supports relationships."],
     3: ["Joy, creativity and social life", "Good for entertaining, creative work and an optimistic home full of visitors."],
@@ -92,14 +92,15 @@ const Destiny = (() => {
     }
     return { value: cur, steps };
   }
-  const letterValue = (ch) => ((ch.toUpperCase().charCodeAt(0) - 65) % 9) + 1; // A=1 … I=9, J=1 …
+  const plain = (s) => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // é → e
+  const letterValue = (ch) => ((plain(ch).toUpperCase().charCodeAt(0) - 65) % 9) + 1; // A=1 … I=9, J=1 …
   const GROUPS = [[1, 5, 7], [2, 4, 8], [3, 6, 9]];
   const groupOf = (n) => GROUPS.find((g) => g.includes(n));
   const single = (n) => (n > 9 ? reduce(n).value : n);
 
   // Address → single digit. Uses the house number; optionally the apartment/unit and letters too.
   function addressNumber(text, { includeLetters = false } = {}) {
-    const raw = String(text || "").trim();
+    const raw = plain(text || "").trim();
     if (!raw) return null;
     const tokens = raw.match(/\d+[A-Za-z]?|\b[A-Za-z]\b/g) || [];
     let digits = "", letters = [];
@@ -110,15 +111,15 @@ const Destiny = (() => {
       }
     } else {
       // House number = first number; a unit like "Apt 3B" / "#12" also counts.
-      const unit = raw.match(/(?:apt|apartment|unit|suite|ste|#|flat)\.?\s*([0-9]+[A-Za-z]?|[A-Za-z])\b/i);
+      const unit = raw.match(/(?:apt|apartment|appt|app|appartement|unit|suite|ste|bat|batiment|porte|#|flat)\.?\s*([0-9]+[A-Za-z]?|[A-Za-z])\b/i);
       const first = tokens.find((t) => /\d/.test(t));
-      if (!first) return { error: "Include a house or building number, e.g. 1472 Maple St." };
+      if (!first) return { error: t("Include a house or building number, e.g. 1472 Maple St.", "Indiquez un numéro de rue ou d'immeuble, par ex. 12 rue de la Paix.") };
       const parts = [first];
       if (unit && unit[1] !== first) parts.push(unit[1]);
       for (const p of parts) for (const ch of p) /\d/.test(ch) ? (digits += ch) : letters.push(ch);
     }
     const values = [...digits].map(Number).concat(letters.map(letterValue));
-    if (!values.length) return { error: "Include a house or building number, e.g. 1472 Maple St." };
+    if (!values.length) return { error: t("Include a house or building number, e.g. 1472 Maple St.", "Indiquez un numéro de rue ou d'immeuble, par ex. 12 rue de la Paix.") };
     const sum = values.reduce((a, b) => a + b, 0);
     const r = reduce(sum);
     const labels = [...digits].concat(letters.map((l) => `${l.toUpperCase()}(${letterValue(l)})`));
@@ -130,12 +131,12 @@ const Destiny = (() => {
     };
   }
 
-  function matchHome(homeNum, chart, thing = "this home") {
+  function matchHome(homeNum, chart, thing = t("this home", "ce logement")) {
     const lp = single(chart.lifePath.number);
-    if (homeNum === lp) return { level: "great", label: "Perfect match", text: `It's the same as your Life Path number (${lp}), so ${thing} amplifies your natural strengths.` };
-    if (groupOf(homeNum) === groupOf(lp)) return { level: "good", label: "Harmonious", text: `${homeNum} belongs to the same family as your Life Path ${lp} (${groupOf(lp).join(" · ")}), so it supports how you naturally live and work.` };
-    if (homeNum === 8) return { level: "good", label: "Wealth booster", text: "Not in your number family, but 8 is the traditional number of money and business." };
-    return { level: "ok", label: "Neutral", text: `Not in your number family (${groupOf(lp).join(" · ")}). It brings a different energy: workable, just not a natural amplifier.` };
+    if (homeNum === lp) return { level: "great", label: t("Perfect match", "Accord parfait"), text: t(`It's the same as your Life Path number (${lp}), so ${thing} amplifies your natural strengths.`, `C'est le même que votre chemin de vie (${lp}) : ${thing} amplifie vos forces naturelles.`) };
+    if (groupOf(homeNum) === groupOf(lp)) return { level: "good", label: t("Harmonious", "Harmonieux"), text: t(`${homeNum} belongs to the same family as your Life Path ${lp} (${groupOf(lp).join(" · ")}), so it supports how you naturally live and work.`, `Le ${homeNum} appartient à la même famille que votre chemin de vie ${lp} (${groupOf(lp).join(" · ")}) : il soutient votre façon naturelle de vivre et de travailler.`) };
+    if (homeNum === 8) return { level: "good", label: t("Wealth booster", "Booster de richesse"), text: t("Not in your number family, but 8 is the traditional number of money and business.", "Hors de votre famille de nombres, mais le 8 est traditionnellement le nombre de l'argent et des affaires.") };
+    return { level: "ok", label: t("Neutral", "Neutre"), text: t(`Not in your number family (${groupOf(lp).join(" · ")}). It brings a different energy: workable, just not a natural amplifier.`, `Hors de votre famille de nombres (${groupOf(lp).join(" · ")}). Il apporte une énergie différente : vivable, mais pas un amplificateur naturel.`) };
   }
 
   function bestHomeNumbers(chart) {
@@ -151,7 +152,7 @@ const Destiny = (() => {
     const py = reduce(digitSum(m) + digitSum(d) + digitSum(y)).value;
     const pm = reduce(py + today.getMonth() + 1).value;
     const pd = reduce(pm + today.getDate()).value;
-    const name = (birth.name || "").replace(/[^A-Za-z]/g, "");
+    const name = plain(birth.name || "").replace(/[^A-Za-z]/g, "");
     const expression = name ? reduce([...name].reduce((s, ch) => s + letterValue(ch), 0), true).value : null;
     const sunLucky = SIGNS[chart.signs.sun].lucky.number;
     const set = [...new Set([chart.lifePath.number, d, sunLucky, py, expression].filter(Boolean))];
@@ -174,22 +175,25 @@ const Destiny = (() => {
     ])].slice(0, 8);
 
     const points = [];
-    if (mcSign !== null) points.push({ title: `Midheaven in ${SIGNS[mcSign].name}`, text: `Your Midheaven is the top of your chart: the path you're known for. ${SIGNS[mcSign].name} here points you toward ${SIGNS[mcSign].domain}. ${SIGNS[mcSign].career}` });
-    points.push({ title: `Sun in ${SIGNS[sun].name}`, text: SIGNS[sun].career });
+    const and = t(" and ", " et ");
+    const pin = (k, sign) => t(`${PLANETS[k].name} in ${SIGNS[sign].name}`, `${PLANETS[k].name} en ${SIGNS[sign].name}`);
+    if (mcSign !== null) points.push({ title: t(`Midheaven in ${SIGNS[mcSign].name}`, `Milieu du Ciel en ${SIGNS[mcSign].name}`), text: t(`Your Midheaven is the top of your chart: the path you're known for. ${SIGNS[mcSign].name} here points you toward ${SIGNS[mcSign].domain}. ${SIGNS[mcSign].career}`, `Votre Milieu du Ciel est le sommet de votre thème : la voie pour laquelle on vous connaît. Ce signe vous oriente vers ${SIGNS[mcSign].domain}. ${SIGNS[mcSign].career}`) });
+    points.push({ title: pin("sun", sun), text: SIGNS[sun].career });
     if (tenthSign !== null) {
       const ruler = RULER[tenthSign];
-      points.push({ title: `${PLANETS[ruler].name} rules your career house`, text: `${SIGNS[tenthSign].name} sits on your 10th house, so ${PLANETS[ruler].name} (${PLANETS[ruler].role}) steers your career. It's in ${SIGNS[chart.signs[ruler]].name}, in your ${ORD[chart.houses[ruler]]} house: success comes through ${HOUSES[chart.houses[ruler]].short}.` });
+      points.push({ title: t(`${PLANETS[ruler].name} rules your career house`, `${PLANETS[ruler].name} gouverne votre maison de carrière`), text: t(`${SIGNS[tenthSign].name} sits on your 10th house, so ${PLANETS[ruler].name} (${PLANETS[ruler].role}) steers your career. It's in ${SIGNS[chart.signs[ruler]].name}, in your ${ORD[chart.houses[ruler]]} house: success comes through ${HOUSES[chart.houses[ruler]].short}.`, `Votre 10e maison est en ${SIGNS[tenthSign].name} : ${PLANETS[ruler].name} (${PLANETS[ruler].role}) guide votre carrière. Cette planète est en ${SIGNS[chart.signs[ruler]].name}, dans votre ${ORD[chart.houses[ruler]]} maison : la réussite passe par ${HOUSES[chart.houses[ruler]].short}.`) });
     }
-    if (in10.length) points.push({ title: `${in10.map((k) => PLANETS[k].name).join(" and ")} in your 10th house`, text: `Planets at the top of your chart make career a central theme of your life. ${in10.map((k) => `${PLANETS[k].name} brings ${PLANETS[k].role}`).join("; ")} into your public work.` });
-    points.push({ title: `Mercury in ${SIGNS[chart.signs.mercury].name}`, text: `You think and work ${SIGNS[chart.signs.mercury].style}. Choose roles that use this.` });
-    points.push({ title: `Mars in ${SIGNS[chart.signs.mars].name}`, text: `Your drive is strongest around ${SIGNS[chart.signs.mars].domain}: the kind of goals that keep you motivated.` });
-    if (!(tenthSign !== null && RULER[tenthSign] === "saturn") && !in10.includes("saturn")) points.push({ title: `Saturn in ${SIGNS[chart.signs.saturn].name}`, text: `Your long-game mastery: ${SIGNS[chart.signs.saturn].domain}. Skills here take years to build but become your most valuable asset.` });
+    if (in10.length) points.push({ title: t(`${in10.map((k) => PLANETS[k].name).join(and)} in your 10th house`, `${in10.map((k) => PLANETS[k].name).join(and)} dans votre 10e maison`), text: t(`Planets at the top of your chart make career a central theme of your life. ${in10.map((k) => `${PLANETS[k].name} brings ${PLANETS[k].role}`).join("; ")} into your public work.`, `Des planètes au sommet de votre thème font de la carrière un thème central de votre vie. ${in10.map((k) => `${PLANETS[k].name} apporte ${PLANETS[k].role}`).join(" ; ")} dans votre vie professionnelle.`) });
+    points.push({ title: pin("mercury", chart.signs.mercury), text: t(`You think and work ${SIGNS[chart.signs.mercury].style}. Choose roles that use this.`, `Vous pensez et travaillez ${SIGNS[chart.signs.mercury].style}. Choisissez des rôles qui s'en servent.`) });
+    points.push({ title: pin("mars", chart.signs.mars), text: t(`Your drive is strongest around ${SIGNS[chart.signs.mars].domain}: the kind of goals that keep you motivated.`, `Votre énergie est la plus forte autour ${de(SIGNS[chart.signs.mars].domain)} : le genre d'objectifs qui vous motivent.`) });
+    if (!(tenthSign !== null && RULER[tenthSign] === "saturn") && !in10.includes("saturn")) points.push({ title: pin("saturn", chart.signs.saturn), text: t(`Your long-game mastery: ${SIGNS[chart.signs.saturn].domain}. Skills here take years to build but become your most valuable asset.`, `Votre maîtrise sur le long terme : ${SIGNS[chart.signs.saturn].domain}. Ces compétences prennent des années à se construire mais deviennent votre plus grand atout.`) });
 
     const secondSign = chart.rising !== null ? (chart.rising + 1) % 12 : (sun + 1) % 12;
     const moneyRuler = RULER[secondSign];
     const money = {
-      title: "How you earn best",
-      text: `Your money house is ${SIGNS[secondSign].name}, ruled by ${PLANETS[moneyRuler].name}. You attract income through ${SIGNS[secondSign].domain}, and Jupiter in ${SIGNS[chart.signs.jupiter].name} brings luck through ${SIGNS[chart.signs.jupiter].domain}.${in2.length ? ` ${in2.map((k) => PLANETS[k].name).join(" and ")} in your 2nd house make earning a major life focus.` : ""}`,
+      title: t("How you earn best", "Comment vous gagnez le mieux"),
+      text: t(`Your money house is ${SIGNS[secondSign].name}, ruled by ${PLANETS[moneyRuler].name}. You attract income through ${SIGNS[secondSign].domain}, and Jupiter in ${SIGNS[chart.signs.jupiter].name} brings luck through ${SIGNS[chart.signs.jupiter].domain}.${in2.length ? ` ${in2.map((k) => PLANETS[k].name).join(" and ")} in your 2nd house make earning a major life focus.` : ""}`,
+        `Votre maison de l'argent est en ${SIGNS[secondSign].name}, gouvernée par ${PLANETS[moneyRuler].name}. Vous attirez des revenus par ${SIGNS[secondSign].domain}, et Jupiter en ${SIGNS[chart.signs.jupiter].name} apporte la chance par ${SIGNS[chart.signs.jupiter].domain}.${in2.length ? ` ${in2.map((k) => PLANETS[k].name).join(" et ")} dans votre 2e maison font des revenus un axe majeur de votre vie.` : ""}`),
     };
 
     return {
@@ -216,15 +220,17 @@ const Destiny = (() => {
     const lp = single(chart.lifePath.number);
 
     const points = [];
-    if (desc !== null) points.push({ title: `Descendant in ${SIGNS[desc].name}`, text: `Your 7th house of partnership starts in ${SIGNS[desc].name}. You're drawn to, and grow most with, a partner who is ${PARTNER[desc]}.` });
-    points.push({ title: `Venus in ${SIGNS[n.venus].name}`, text: `What attracts you: ${SIGNS[n.venus].style}. You fall for people who reflect ${SIGNS[n.venus].domain}.` });
-    points.push({ title: `Mars in ${SIGNS[n.mars].name}`, text: `What sparks desire: energy that is ${PARTNER[n.mars].split(":")[0]}.` });
-    points.push({ title: `Moon in ${SIGNS[n.moon].name}`, text: `What you need to feel safe: a partner who respects that ${SIGNS[n.moon].moon.charAt(0).toLowerCase() + SIGNS[n.moon].moon.slice(1)}` });
+    const pin = (k) => t(`${PLANETS[k].name} in ${SIGNS[n[k]].name}`, `${PLANETS[k].name} en ${SIGNS[n[k]].name}`);
+    const lcMoon = SIGNS[n.moon].moon.charAt(0).toLowerCase() + SIGNS[n.moon].moon.slice(1);
+    if (desc !== null) points.push({ title: t(`Descendant in ${SIGNS[desc].name}`, `Descendant en ${SIGNS[desc].name}`), text: t(`Your 7th house of partnership starts in ${SIGNS[desc].name}. You're drawn to, and grow most with, a partner who is ${PARTNER[desc]}.`, `Votre 7e maison, celle du couple, commence en ${SIGNS[desc].name}. Vous êtes attiré par un partenaire ${PARTNER[desc]}, et c'est avec lui que vous grandissez le plus.`) });
+    points.push({ title: pin("venus"), text: t(`What attracts you: ${SIGNS[n.venus].style}. You fall for people who reflect ${SIGNS[n.venus].domain}.`, `Ce qui vous attire : aimer ${SIGNS[n.venus].style}. Vous craquez pour les personnes qui reflètent ${SIGNS[n.venus].domain}.`) });
+    points.push({ title: pin("mars"), text: t(`What sparks desire: energy that is ${PARTNER[n.mars].split(":")[0]}.`, `Ce qui éveille votre désir : quelqu'un ${deAdj(PARTNER[n.mars].split(":")[0].trim())}.`) });
+    points.push({ title: pin("moon"), text: t(`What you need to feel safe: a partner who respects that ${lcMoon}`, `Ce dont vous avez besoin pour vous sentir en sécurité : un partenaire qui comprend que ${lcMoon.replace(/^vos /, "vos ").replace(/^vous /, "vous ")}`) });
 
     const ideal = desc !== null ? PARTNER[desc] : PARTNER[n.venus];
     return {
-      headline: `Someone ${ideal.split(":")[0]}`,
-      ideal: `Your ideal partner is ${ideal}.`,
+      headline: t(`Someone ${ideal.split(":")[0]}`, `Quelqu'un ${deAdj(ideal.split(":")[0].trim())}`),
+      ideal: t(`Your ideal partner is ${ideal}.`, `Votre partenaire idéal est ${ideal}.`),
       points, best, challenge,
       lpMatch: { lp, numbers: groupOf(lp) },
       loveText: SIGNS[n.sun].love,
@@ -257,7 +263,7 @@ const Destiny = (() => {
   // ---------- planetary hours ----------
   const DAY_RULER = ["sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn"];
   const CHALDEAN = ["saturn", "jupiter", "mars", "sun", "venus", "mercury", "moon"];
-  const HOUR_MEANING = {
+  const HOUR_MEANING = FR ? FR_CONTENT.hourMeaning : {
     jupiter: "Luck, growth and money. Best for launches, investments, asking for a raise and buying tickets.",
     venus: "Attraction, sales and harmony. Good for deals, beauty, love and spending on pleasure.",
     sun: "Success and recognition. Good for meeting important people, interviews and going public.",
@@ -313,18 +319,18 @@ const Destiny = (() => {
     const lp = luckyPlanets(chart);
     const reasons = [];
     let s = 0;
-    if (ruler === "jupiter") { s += 1.5; reasons.push("Jupiter's day (Thursday)"); }
-    else if (ruler === "venus") { s += 1; reasons.push("Venus's day (Friday)"); }
-    else if (ruler === "sun") { s += 0.75; reasons.push("the Sun's day (Sunday)"); }
-    if (ruler === lp.chartRuler) { s += 0.75; reasons.push(`ruled by your chart ruler, ${PLANETS[ruler].name}`); }
-    if (ph.index >= 1 && ph.index <= 3) { s += 1; reasons.push("waxing Moon (growth)"); }
-    else if (ph.index === 4) { s += 0.5; reasons.push("Full Moon"); }
+    if (ruler === "jupiter") { s += 1.5; reasons.push(t("Jupiter's day (Thursday)", "jour de Jupiter (jeudi)")); }
+    else if (ruler === "venus") { s += 1; reasons.push(t("Venus's day (Friday)", "jour de Vénus (vendredi)")); }
+    else if (ruler === "sun") { s += 0.75; reasons.push(t("the Sun's day (Sunday)", "jour du Soleil (dimanche)")); }
+    if (ruler === lp.chartRuler) { s += 0.75; reasons.push(t(`ruled by your chart ruler, ${PLANETS[ruler].name}`, `gouverné par votre maître de thème, ${PLANETS[ruler].name}`)); }
+    if (ph.index >= 1 && ph.index <= 3) { s += 1; reasons.push(t("waxing Moon (growth)", "Lune croissante (croissance)")); }
+    else if (ph.index === 4) { s += 0.5; reasons.push(t("Full Moon", "Pleine Lune")); }
     else if (ph.index >= 6) s -= 0.5;
-    if ([2, 5, 8, 11].includes(mh)) { s += 1; reasons.push(`Moon in your ${ORD[mh]} house of ${HOUSES[mh].name.toLowerCase()}`); }
+    if ([2, 5, 8, 11].includes(mh)) { s += 1; reasons.push(t(`Moon in your ${ORD[mh]} house of ${HOUSES[mh].name.toLowerCase()}`, `Lune dans votre ${ORD[mh]} maison (${HOUSES[mh].name.toLowerCase()})`)); }
     const jd = signDist(moon, chart.signs.jupiter);
-    if (jd === 0 || jd === 4) { s += 1; reasons.push("Moon in harmony with your natal Jupiter"); }
+    if (jd === 0 || jd === 4) { s += 1; reasons.push(t("Moon in harmony with your natal Jupiter", "Lune en harmonie avec votre Jupiter natal")); }
     const vd = signDist(moon, chart.signs.venus);
-    if (vd === 0 || vd === 4) { s += 0.5; reasons.push("Moon in harmony with your natal Venus"); }
+    if (vd === 0 || vd === 4) { s += 0.5; reasons.push(t("Moon in harmony with your natal Venus", "Lune en harmonie avec votre Vénus natale")); }
     if (signDist(moon, chart.signs.saturn) === 3) s -= 0.5;
     return { date: d, score: s, reasons, moonSign: moon, phase: PHASES[ph.index] };
   }
@@ -348,20 +354,20 @@ const Destiny = (() => {
       const sh = house(sun, chart), vh = house(venus, chart);
       let s = 0;
       const reasons = [];
-      if ([2, 5, 8, 11].includes(sh)) { s += 2; reasons.push(`Sun in your ${ORD[sh]} house of ${HOUSES[sh].name.toLowerCase()}`); }
-      if (sh === 10) { s += 1.5; reasons.push("Sun in your career house"); }
-      if (sh === 1) { s += 1; reasons.push("your birthday season"); }
+      if ([2, 5, 8, 11].includes(sh)) { s += 2; reasons.push(t(`Sun in your ${ORD[sh]} house of ${HOUSES[sh].name.toLowerCase()}`, `Soleil dans votre ${ORD[sh]} maison (${HOUSES[sh].name.toLowerCase()})`)); }
+      if (sh === 10) { s += 1.5; reasons.push(t("Sun in your career house", "Soleil dans votre maison de carrière")); }
+      if (sh === 1) { s += 1; reasons.push(t("your birthday season", "la saison de votre anniversaire")); }
       const sj = signDist(sun, chart.signs.jupiter);
-      if (sj === 0 || sj === 4) { s += 1; reasons.push("Sun in harmony with your natal Jupiter"); }
-      if ([2, 5, 8, 11].includes(vh)) { s += 1; reasons.push(`Venus in your ${ORD[vh]} house`); }
-      if (signDist(sun, jup) === 0 || signDist(sun, jup) === 4) { s += 0.5; reasons.push("Sun and Jupiter in harmony"); }
+      if (sj === 0 || sj === 4) { s += 1; reasons.push(t("Sun in harmony with your natal Jupiter", "Soleil en harmonie avec votre Jupiter natal")); }
+      if ([2, 5, 8, 11].includes(vh)) { s += 1; reasons.push(t(`Venus in your ${ORD[vh]} house`, `Vénus dans votre ${ORD[vh]} maison`)); }
+      if (signDist(sun, jup) === 0 || signDist(sun, jup) === 4) { s += 0.5; reasons.push(t("Sun and Jupiter in harmony", "Soleil et Jupiter en harmonie")); }
       if (sh === 12) s -= 1;
       return { date: d, score: s, reasons, sunSign: sun, sunHouse: sh };
     }).map((m, _, all) => ({ ...m, best: [...all].sort((a, b) => b.score - a.score).slice(0, 3).includes(m) }));
   }
 
   // ---------- Jupiter years ----------
-  const JUP_HOUSE = {
+  const JUP_HOUSE = FR ? FR_CONTENT.jupHouse : {
     1: "A personal fresh start. Confidence, opportunities and visibility grow.",
     2: "One of the best money periods. Income, savings and self-worth expand.",
     3: "Luck through learning, writing, short trips and local connections.",

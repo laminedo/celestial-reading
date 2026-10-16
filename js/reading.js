@@ -2,7 +2,8 @@
 
 const Reading = (() => {
   const DAY = Astro.DAY;
-  const ORD = ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+  const ORD = FR ? ["", "1re", "2e", "3e", "4e", "5e", "6e", "7e", "8e", "9e", "10e", "11e", "12e"]
+    : ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
   const PLANET_KEYS = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"];
 
   // ---------- helpers ----------
@@ -31,14 +32,14 @@ const Reading = (() => {
   const solarHouse = (transitSign, sunSign) => ((((transitSign - sunSign) % 12) + 12) % 12) + 1;
   const noon = (d) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x; };
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-  const fmt = (d, opts = { month: "short", day: "numeric" }) => d.toLocaleDateString(undefined, opts);
-  const weekday = (d) => d.toLocaleDateString(undefined, { weekday: "short" });
+  const fmt = (d, opts = { month: "short", day: "numeric" }) => d.toLocaleDateString(LOCALE, opts);
+  const weekday = (d) => d.toLocaleDateString(LOCALE, { weekday: FR ? "long" : "short" });
   const dateKey = (d) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   const signsAt = (date) => {
     const L = Astro.longitudes(date);
     return Object.fromEntries(PLANET_KEYS.map((k) => [k, Astro.signOf(L[k])]));
   };
-  const houseLine = (planet, house) => `your ${ORD[house]} house of ${HOUSES[house].name.toLowerCase()}`;
+  const houseLine = (planet, house) => t(`your ${ORD[house]} house of ${HOUSES[house].name.toLowerCase()}`, `votre ${ORD[house]} maison (${HOUSES[house].name.toLowerCase()})`);
 
   // Wall-clock time in an IANA time zone → the matching UTC instant (handles historic DST).
   function tzOffsetMs(timeZone, utcMs) {
@@ -78,17 +79,17 @@ const Reading = (() => {
 
     // Cusp warnings when birth time is unknown.
     const notes = [];
-    if (place && !place.timezone && birth.tz === "auto") notes.push("Using this device's time zone for your birth time. Choose your birth time zone for an exact chart.");
-    if (!place) notes.push("Add your birth city and time to reveal your rising sign and make your house readings precise.");
-    else if (!birth.time) notes.push("Add your birth time to reveal your rising sign — it changes about every two hours.");
+    if (place && !place.timezone && birth.tz === "auto") notes.push(t("Using this device's time zone for your birth time. Choose your birth time zone for an exact chart.", "Le fuseau horaire de cet appareil est utilisé pour votre heure de naissance. Choisissez votre fuseau de naissance pour un thème exact."));
+    if (!place) notes.push(t("Add your birth city and time to reveal your rising sign and make your house readings precise.", "Ajoutez votre ville et votre heure de naissance pour révéler votre ascendant et préciser vos maisons."));
+    else if (!birth.time) notes.push(t("Add your birth time to reveal your rising sign — it changes about every two hours.", "Ajoutez votre heure de naissance pour révéler votre ascendant : il change environ toutes les deux heures."));
     if (!birth.time) {
       const moonDeg = Astro.degreeInSign(lon.moon);
       if (moonDeg < 6.6 || moonDeg > 23.4) {
         const other = moonDeg < 15 ? (signs.moon + 11) % 12 : (signs.moon + 1) % 12;
-        notes.push(`Without a birth time your Moon could also be in ${SIGNS[other].name}. Add your birth time for a precise Moon sign.`);
+        notes.push(t(`Without a birth time your Moon could also be in ${SIGNS[other].name}. Add your birth time for a precise Moon sign.`, `Sans heure de naissance, votre Lune pourrait aussi être en ${SIGNS[other].name}. Ajoutez votre heure de naissance pour un signe lunaire précis.`));
       }
       const sunDeg = Astro.degreeInSign(lon.sun);
-      if (sunDeg < 0.6 || sunDeg > 29.4) notes.push("You were born on a cusp — your Sun sign depends on your exact birth time.");
+      if (sunDeg < 0.6 || sunDeg > 29.4) notes.push(t("You were born on a cusp — your Sun sign depends on your exact birth time.", "Vous êtes né sur une cuspide : votre signe solaire dépend de votre heure exacte de naissance."));
     }
 
     // Element balance across the seven classical planets.
@@ -121,7 +122,7 @@ const Reading = (() => {
       name: birth.name, when, lon, signs, retro, notes, elements, dominant, aspects,
       place, angles, rising, houseSign, houses,
       lifePath: { number: n, title: LIFE_PATH[n][0], text: LIFE_PATH[n][1] },
-      chinese: { animal: animal[0], traits: animal[1], element: cElement, year: cy },
+      chinese: { animal: animal[0], traits: animal[1], element: cElement, year: cy, index: (((cy - 4) % 12) + 12) % 12 },
       seed: `${birth.date}|${birth.time || ""}`,
     };
   }
@@ -129,36 +130,41 @@ const Reading = (() => {
   function placementText(key, chart) {
     const base = signText(key, chart);
     if (chart.rising === null) return base;
-    return `${base} Placed in your ${ORD[chart.houses[key]]} house, it plays out through ${HOUSES[chart.houses[key]].short}.`;
+    return t(`${base} Placed in your ${ORD[chart.houses[key]]} house, it plays out through ${HOUSES[chart.houses[key]].short}.`, `${base} Dans votre ${ORD[chart.houses[key]]} maison, cette énergie s'exprime à travers ${HOUSES[chart.houses[key]].short}.`);
   }
 
   function signText(key, chart) {
     const s = SIGNS[chart.signs[key]];
-    const rx = chart.retro[key] ? " It was retrograde when you were born, so this energy turns inward first — you think before you show it." : "";
+    const rx = chart.retro[key] ? t(" It was retrograde when you were born, so this energy turns inward first — you think before you show it.", " Cette planète était rétrograde à votre naissance : son énergie se tourne d'abord vers l'intérieur, vous réfléchissez avant de la montrer.") : "";
     switch (key) {
       case "sun": return s.summary;
       case "moon": return s.moon;
-      case "mercury": return `You think and communicate ${s.style}. Conversations and learning work best for you when they engage ${s.domain}.${rx}`;
-      case "venus": return `In love you give and receive ${s.style}. You're attracted to people and experiences that reflect ${s.domain}.${rx}`;
-      case "mars": return `You chase goals ${s.style}. Your drive is fueled by ${s.domain} — channel it there and you're unstoppable.${rx}`;
-      case "jupiter": return `Luck and growth find you through ${s.domain}. Saying yes in this area tends to open doors.${rx}`;
-      case "saturn": return `Your long-term lessons revolve around ${s.domain}. It may feel hard early on, but this becomes an area of real mastery with time.${rx}`;
+      case "mercury": return t(`You think and communicate ${s.style}. Conversations and learning work best for you when they engage ${s.domain}.${rx}`,
+        `Vous pensez et communiquez ${s.style}. Les conversations et l'apprentissage vous réussissent quand ils touchent ${au(s.domain)}.${rx}`);
+      case "venus": return t(`In love you give and receive ${s.style}. You're attracted to people and experiences that reflect ${s.domain}.${rx}`,
+        `En amour, vous donnez et recevez ${s.style}. Vous êtes attiré par les personnes et les expériences qui reflètent ${s.domain}.${rx}`);
+      case "mars": return t(`You chase goals ${s.style}. Your drive is fueled by ${s.domain} — channel it there and you're unstoppable.${rx}`,
+        `Vous poursuivez vos objectifs ${s.style}. Votre énergie se nourrit ${de(s.domain)} : canalisez-la là et rien ne vous arrête.${rx}`);
+      case "jupiter": return t(`Luck and growth find you through ${s.domain}. Saying yes in this area tends to open doors.${rx}`,
+        `La chance et la croissance vous viennent par ${s.domain}. Dire oui dans ce domaine ouvre souvent des portes.${rx}`);
+      case "saturn": return t(`Your long-term lessons revolve around ${s.domain}. It may feel hard early on, but this becomes an area of real mastery with time.${rx}`,
+        `Vos leçons à long terme tournent autour ${de(s.domain)}. Cela peut sembler difficile au début, mais ce domaine devient une vraie maîtrise avec le temps.${rx}`);
     }
   }
 
   // ---------- day scoring ----------
   function dayScores(chart, date) {
-    const t = signsAt(noon(date));
+    const tr = signsAt(noon(date));
     const n = chart.signs;
     const r = rng(`${chart.seed}|score|${dateKey(date)}`);
     const j = () => (r() - 0.5) * 0.8;
     const clamp = (x) => Math.max(1, Math.min(5, x));
     return {
-      transit: t,
-      love: clamp(3 + aspectScore(t.moon, n.venus) + 0.6 * aspectScore(t.venus, n.sun) + j()),
-      career: clamp(3 + 0.8 * aspectScore(t.moon, n.sun) + 0.6 * aspectScore(t.mars, n.sun) + 0.4 * aspectScore(t.saturn, n.sun) + j()),
-      wellness: clamp(3 + aspectScore(t.moon, n.mars) + 0.6 * aspectScore(t.mars, n.sun) + j()),
-      money: clamp(3 + 0.6 * aspectScore(t.moon, n.venus) + 0.6 * aspectScore(t.jupiter, n.sun) + 0.4 * aspectScore(t.moon, n.jupiter) + j()),
+      transit: tr,
+      love: clamp(3 + aspectScore(tr.moon, n.venus) + 0.6 * aspectScore(tr.venus, n.sun) + j()),
+      career: clamp(3 + 0.8 * aspectScore(tr.moon, n.sun) + 0.6 * aspectScore(tr.mars, n.sun) + 0.4 * aspectScore(tr.saturn, n.sun) + j()),
+      wellness: clamp(3 + aspectScore(tr.moon, n.mars) + 0.6 * aspectScore(tr.mars, n.sun) + j()),
+      money: clamp(3 + 0.6 * aspectScore(tr.moon, n.venus) + 0.6 * aspectScore(tr.jupiter, n.sun) + 0.4 * aspectScore(tr.moon, n.jupiter) + j()),
     };
   }
   const total = (s) => s.love + s.career + s.wellness + s.money;
@@ -195,7 +201,11 @@ const Reading = (() => {
     }
     return out.filter((x) => x.from < end && (!x.to || x.to >= start));
   }
-  const retroAdvice = {
+  const retroAdvice = FR ? {
+    mercury: "vérifiez vos plans, sauvegardez vos fichiers et relisez vos messages avant de les envoyer. Idéal pour revoir, corriger et renouer, moins pour signer des contrats ou acheter de la technologie.",
+    venus: "d'anciennes flammes et d'anciennes valeurs refont surface. Réfléchissez à ce que vous voulez vraiment en amour et en argent avant de grands changements.",
+    mars: "l'énergie se tourne vers l'intérieur. Retravaillez vos projets existants plutôt que de déclencher des conflits ou de lancer de grandes entreprises.",
+  } : {
     mercury: "double-check plans, back up files and reread messages before sending. Great for revisiting, revising and reconnecting — less so for signing contracts or buying tech.",
     venus: "old flames and past values resurface. Reflect on what you truly want in love and money before making big changes.",
     mars: "energy turns inward. Rework existing plans rather than starting fights or launching big new ventures.",
@@ -204,12 +214,12 @@ const Reading = (() => {
     return retrogrades(start, end).map((x) => {
       const sign = SIGNS[Astro.signOf(Astro.longitudes(noon(x.from > start ? x.from : start))[x.planet])];
       const house = solarHouse(SIGNS.indexOf(sign), chart.houseSign);
-      const range = `${fmt(x.from)} – ${x.to ? fmt(x.to) : "later"}`;
+      const range = `${fmt(x.from)} – ${x.to ? fmt(x.to) : t("later", "plus tard")}`;
       return {
         planet: x.planet,
-        title: `${PLANETS[x.planet].name} retrograde in ${sign.name}`,
+        title: t(`${PLANETS[x.planet].name} retrograde in ${sign.name}`, `${PLANETS[x.planet].name} rétrograde en ${sign.name}`),
         range,
-        text: `Through ${houseLine(x.planet, house)}: ${retroAdvice[x.planet]}`,
+        text: t(`Through ${houseLine(x.planet, house)}: ${retroAdvice[x.planet]}`, `Dans ${houseLine(x.planet, house)} : ${retroAdvice[x.planet]}`),
       };
     });
   }
@@ -219,34 +229,38 @@ const Reading = (() => {
     const d = noon(date);
     const r = rng(`${chart.seed}|daily|${dateKey(d)}`);
     const scores = dayScores(chart, d);
-    const t = scores.transit;
-    const moonHouse = solarHouse(t.moon, chart.houseSign);
+    const tr = scores.transit;
+    const moonHouse = solarHouse(tr.moon, chart.houseSign);
     const H = HOUSES[moonHouse];
     const ph = Astro.phase(d);
     const phaseInfo = PHASES[ph.index];
     const endSign = Astro.signOf(Astro.longitudes(new Date(d.getTime() + 11 * 3600000)).moon);
     const startSign = Astro.signOf(Astro.longitudes(new Date(d.getTime() - 12 * 3600000)).moon);
-    const asp = ASPECTS[signDistance(t.moon, chart.signs.sun)];
-    const marsHouse = solarHouse(t.mars, chart.houseSign);
+    const asp = ASPECTS[signDistance(tr.moon, chart.signs.sun)];
+    const marsHouse = solarHouse(tr.mars, chart.houseSign);
 
-    let moonLine = `The Moon is in ${SIGNS[t.moon].name}, moving through your ${ORD[moonHouse]} house of ${H.name.toLowerCase()} — today's focus is ${H.short}.`;
-    if (endSign !== t.moon) moonLine += ` Later today it slips into ${SIGNS[endSign].name}, shifting the mood toward ${HOUSES[solarHouse(endSign, chart.houseSign)].short}.`;
-    else if (startSign !== t.moon) moonLine = moonLine.replace("The Moon is in", "The Moon entered " + SIGNS[t.moon].name + " overnight. It's now in");
+    let moonLine = FR
+      ? `${startSign !== tr.moon && endSign === tr.moon ? `La Lune est entrée en ${SIGNS[tr.moon].name} cette nuit. ` : ""}La Lune est en ${SIGNS[tr.moon].name} et traverse votre ${ORD[moonHouse]} maison (${H.name.toLowerCase()}) : aujourd'hui, l'accent est mis sur ${H.short}.`
+      : `The Moon is in ${SIGNS[tr.moon].name}, moving through your ${ORD[moonHouse]} house of ${H.name.toLowerCase()} — today's focus is ${H.short}.`;
+    if (endSign !== tr.moon) moonLine += t(` Later today it slips into ${SIGNS[endSign].name}, shifting the mood toward ${HOUSES[solarHouse(endSign, chart.houseSign)].short}.`,
+      ` Plus tard dans la journée, elle passe en ${SIGNS[endSign].name} et l'humeur se tourne vers ${HOUSES[solarHouse(endSign, chart.houseSign)].short}.`);
+    else if (!FR && startSign !== tr.moon) moonLine = moonLine.replace("The Moon is in", "The Moon entered " + SIGNS[tr.moon].name + " overnight. It's now in");
 
-    const overview = [moonLine, asp.moon, `It's a ${phaseInfo.name} (${ph.illumination}% illuminated): ${phaseInfo.action.charAt(0).toLowerCase() + phaseInfo.action.slice(1)}`].join(" ");
+    const lc = (x) => x.charAt(0).toLowerCase() + x.slice(1);
+    const overview = [moonLine, asp.moon, t(`It's a ${phaseInfo.name} (${ph.illumination}% illuminated): ${lc(phaseInfo.action)}`, `C'est une phase de ${lc(phaseInfo.name)} (${ph.illumination} % éclairée) : ${lc(phaseInfo.action)}`)].join(" ");
 
     const todo = [...pickN(r, H.do, 3), phaseInfo.action];
-    if (marsHouse !== moonHouse) todo.push(`Channel extra energy into ${HOUSES[marsHouse].short} — Mars is fueling that part of your life.`);
+    if (marsHouse !== moonHouse) todo.push(t(`Channel extra energy into ${HOUSES[marsHouse].short} — Mars is fueling that part of your life.`, `Mettez votre surplus d'énergie dans ${HOUSES[marsHouse].short} : Mars alimente ce domaine de votre vie.`));
     const avoid = pickN(r, H.avoid, 2);
-    if (asp.score < 0) avoid.push("Overreacting to small frustrations — they'll pass with the Moon.");
+    if (asp.score < 0) avoid.push(t("Overreacting to small frustrations — they'll pass with the Moon.", "Réagir trop fort aux petites contrariétés : elles passeront avec la Lune."));
 
-    const element = SIGNS[t.moon].element;
+    const element = SIGNS[tr.moon].element;
     return {
       kind: "daily",
       label: fmt(d, { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
       headline: H.headline,
       overview,
-      moon: { sign: SIGNS[t.moon], phase: phaseInfo, illumination: ph.illumination, house: moonHouse },
+      moon: { sign: SIGNS[tr.moon], phase: phaseInfo, illumination: ph.illumination, house: moonHouse },
       areas: areas(r, scores),
       todo, avoid,
       lucky: {
@@ -273,8 +287,8 @@ const Reading = (() => {
       const s = dayScores(chart, d);
       return { date: d, scores: s, moonSign: s.transit.moon, house: solarHouse(s.transit.moon, chart.houseSign) };
     });
-    const t = signsAt(addDays(start, 3));
-    const hs = Object.fromEntries(["sun", "mercury", "venus", "mars"].map((k) => [k, solarHouse(t[k], chart.houseSign)]));
+    const tr = signsAt(addDays(start, 3));
+    const hs = Object.fromEntries(["sun", "mercury", "venus", "mars"].map((k) => [k, solarHouse(tr[k], chart.houseSign)]));
     const ranked = [...days].sort((a, b) => total(b.scores) - total(a.scores));
     const best = ranked.slice(0, 2).sort((a, b) => a.date - b.date);
     const tough = ranked[ranked.length - 1];
@@ -283,28 +297,35 @@ const Reading = (() => {
       const sign = Astro.signOf(e.moonLon);
       const house = solarHouse(sign, chart.houseSign);
       return { date: e.date, phase: PHASES[e.phaseIndex], sign: SIGNS[sign], house,
-        text: `${PHASES[e.phaseIndex].action} Focus it on ${HOUSES[house].short}.` };
+        text: t(`${PHASES[e.phaseIndex].action} Focus it on ${HOUSES[house].short}.`, `${PHASES[e.phaseIndex].action} Concentrez-vous sur ${HOUSES[house].short}.`) };
     });
     const ingresses = ["sun", "mercury", "venus", "mars"].flatMap((p) => Astro.planetEvents(p, start, addDays(end, -1)))
       .filter((e) => e.type === "ingress")
-      .map((e) => ({ date: e.date, text: `${PLANETS[e.planet].name} enters ${SIGNS[e.sign].name} — your ${ORD[solarHouse(e.sign, chart.houseSign)]} house of ${HOUSES[solarHouse(e.sign, chart.houseSign)].name.toLowerCase()}.` }));
+      .map((e) => ({ date: e.date, text: t(`${PLANETS[e.planet].name} enters ${SIGNS[e.sign].name} — your ${ORD[solarHouse(e.sign, chart.houseSign)]} house of ${HOUSES[solarHouse(e.sign, chart.houseSign)].name.toLowerCase()}.`,
+        `${PLANETS[e.planet].name} entre en ${SIGNS[e.sign].name}, dans ${houseLine(e.planet, solarHouse(e.sign, chart.houseSign))}.`) }));
 
     const H = HOUSES[hs.sun];
-    const overview = [
+    const overview = (FR ? [
+      `Cette semaine, le Soleil éclaire ${houseLine("sun", hs.sun)} : priorité ${au(H.short)}.`,
+      hs.mercury === hs.venus
+        ? `Mercure et Vénus se rejoignent autour ${de(HOUSES[hs.venus].short)}, et Mars dynamise ${HOUSES[hs.mars].short}.`
+        : `Mercure oriente vos pensées vers ${HOUSES[hs.mercury].short}, Vénus adoucit ${HOUSES[hs.venus].short} et Mars dynamise ${HOUSES[hs.mars].short}.`,
+      `Vos meilleurs jours sont ${best.map((b) => weekday(b.date)).join(" et ")} ; levez le pied ${weekday(tough.date)}.`,
+    ] : [
       `This week the Sun spotlights ${houseLine("sun", hs.sun)}, so ${H.short} take priority.`,
       hs.mercury === hs.venus
         ? `Mercury and Venus both gather around ${HOUSES[hs.venus].short}, and Mars fires up ${HOUSES[hs.mars].short}.`
         : `Mercury focuses your thinking on ${HOUSES[hs.mercury].short}, Venus sweetens ${HOUSES[hs.venus].short}, and Mars fires up ${HOUSES[hs.mars].short}.`,
       `Your strongest days are ${best.map((b) => weekday(b.date)).join(" and ")}; take it easier on ${weekday(tough.date)}.`,
-    ].join(" ");
+    ]).join(" ");
 
     const todo = [
       pick(r, H.do),
       pick(r, HOUSES[hs.mars].do),
       pick(r, HOUSES[hs.venus].do),
       pick(r, HOUSES[hs.mercury].do),
-      ...events.filter((e) => e.phase.name === "New Moon" || e.phase.name === "Full Moon")
-        .map((e) => `${weekday(e.date)}: ${e.phase.name} in ${e.sign.name} — ${e.phase.action.charAt(0).toLowerCase() + e.phase.action.slice(1)}`),
+      ...events.filter((e) => e.phase === PHASES[0] || e.phase === PHASES[4])
+        .map((e) => t(`${weekday(e.date)}: ${e.phase.name} in ${e.sign.name} — `, `${weekday(e.date)} : ${e.phase.name} en ${e.sign.name}. `) + e.phase.action.charAt(0).toLowerCase() + e.phase.action.slice(1)),
     ];
     const avoid = [pick(r, H.avoid), pick(r, HOUSES[days.find((d) => d.date === tough.date).house].avoid)];
 
@@ -315,12 +336,12 @@ const Reading = (() => {
       overview,
       days: days.map((d) => ({ ...d, total: total(d.scores), best: best.includes(d), tough: d === tough })),
       areas: areas(r, average(days.map((d) => d.scores)), {
-        love: `Venus in your ${ORD[hs.venus]} house points love toward ${HOUSES[hs.venus].short}.`,
-        career: `Mars in your ${ORD[hs.mars]} house drives action around ${HOUSES[hs.mars].short}.`,
+        love: t(`Venus in your ${ORD[hs.venus]} house points love toward ${HOUSES[hs.venus].short}.`, `Vénus dans votre ${ORD[hs.venus]} maison oriente l'amour vers ${HOUSES[hs.venus].short}.`),
+        career: t(`Mars in your ${ORD[hs.mars]} house drives action around ${HOUSES[hs.mars].short}.`, `Mars dans votre ${ORD[hs.mars]} maison pousse à agir autour ${de(HOUSES[hs.mars].short)}.`),
       }),
       todo: [...new Set(todo)], avoid: [...new Set(avoid)],
-      events: [...events.map((e) => ({ date: e.date, title: `${e.phase.icon} ${e.phase.name} in ${e.sign.name}`, text: e.text })),
-               ...ingresses.map((e) => ({ date: e.date, title: "Planet shift", text: e.text }))].sort((a, b) => a.date - b.date),
+      events: [...events.map((e) => ({ date: e.date, title: t(`${e.phase.icon} ${e.phase.name} in ${e.sign.name}`, `${e.phase.icon} ${e.phase.name} en ${e.sign.name}`), text: e.text })),
+               ...ingresses.map((e) => ({ date: e.date, title: t("Planet shift", "Changement planétaire"), text: e.text }))].sort((a, b) => a.date - b.date),
       notes: retroNotes(start, end, chart),
     };
   }
@@ -336,14 +357,14 @@ const Reading = (() => {
       return { date: d, scores: dayScores(chart, d) };
     });
     const sunStart = signsAt(start).sun;
-    const t = signsAt(addDays(start, 14));
+    const tr = signsAt(addDays(start, 14));
     const sunH1 = solarHouse(sunStart, chart.houseSign);
     const sunEvents = Astro.planetEvents("sun", start, addDays(end, -1)).filter((e) => e.type === "ingress");
     const sunH2 = sunEvents.length ? solarHouse(sunEvents[0].sign, chart.houseSign) : null;
-    const jH = solarHouse(t.jupiter, chart.houseSign);
-    const sH = solarHouse(t.saturn, chart.houseSign);
-    const vH = solarHouse(t.venus, chart.houseSign);
-    const mH = solarHouse(t.mars, chart.houseSign);
+    const jH = solarHouse(tr.jupiter, chart.houseSign);
+    const sH = solarHouse(tr.saturn, chart.houseSign);
+    const vH = solarHouse(tr.venus, chart.houseSign);
+    const mH = solarHouse(tr.mars, chart.houseSign);
 
     const lunar = Astro.phaseEvents(start, end).filter((e) => e.quarter === 0 || e.quarter === 2).map((e) => {
       const sign = Astro.signOf(e.moonLon);
@@ -358,10 +379,14 @@ const Reading = (() => {
 
     const overview = [];
     overview.push(sunH2
-      ? `The Sun lights up ${houseLine("sun", sunH1)} until ${fmt(sunEvents[0].date)}, then moves into ${houseLine("sun", sunH2)}. The month shifts from ${HOUSES[sunH1].short} to ${HOUSES[sunH2].short}.`
-      : `All month the Sun lights up ${houseLine("sun", sunH1)} — ${HOUSES[sunH1].short} are your main stage.`);
-    if (birthday) overview.push(`Happy solar return! Your birthday on ${fmt(birthday)} opens a brand-new personal year — set intentions you'll actually keep.`);
-    overview.push(`Jupiter, the planet of luck, is expanding ${HOUSES[jH].short}, while Saturn asks for patience and maturity around ${HOUSES[sH].short}.`);
+      ? t(`The Sun lights up ${houseLine("sun", sunH1)} until ${fmt(sunEvents[0].date)}, then moves into ${houseLine("sun", sunH2)}. The month shifts from ${HOUSES[sunH1].short} to ${HOUSES[sunH2].short}.`,
+        `Le Soleil éclaire ${houseLine("sun", sunH1)} jusqu'au ${fmt(sunEvents[0].date)}, puis passe dans ${houseLine("sun", sunH2)}. Le mois glisse ${de(HOUSES[sunH1].short)} vers ${HOUSES[sunH2].short}.`)
+      : t(`All month the Sun lights up ${houseLine("sun", sunH1)} — ${HOUSES[sunH1].short} are your main stage.`,
+        `Tout le mois, le Soleil éclaire ${houseLine("sun", sunH1)} : ${HOUSES[sunH1].short} sont au premier plan.`));
+    if (birthday) overview.push(t(`Happy solar return! Your birthday on ${fmt(birthday)} opens a brand-new personal year — set intentions you'll actually keep.`,
+      `Joyeux retour solaire ! Votre anniversaire, le ${fmt(birthday)}, ouvre une toute nouvelle année personnelle : fixez des intentions que vous tiendrez vraiment.`));
+    overview.push(t(`Jupiter, the planet of luck, is expanding ${HOUSES[jH].short}, while Saturn asks for patience and maturity around ${HOUSES[sH].short}.`,
+      `Jupiter, planète de la chance, fait grandir ${HOUSES[jH].short}, tandis que Saturne demande patience et maturité autour ${de(HOUSES[sH].short)}.`));
 
     const ranked = [...days].sort((a, b) => total(b.scores) - total(a.scores));
     const power = ranked.slice(0, 3).sort((a, b) => a.date - b.date);
@@ -369,25 +394,28 @@ const Reading = (() => {
 
     const todo = [...pickN(r, HOUSES[sunH1].do, 2)];
     if (sunH2) todo.push(pick(r, HOUSES[sunH2].do));
-    lunar.forEach((l) => todo.push(`${fmt(l.date)} · ${l.phase.name} in ${l.sign.name}: ${l.phase.name === "New Moon" ? "start something new around" : "complete or release what's ready around"} ${HOUSES[l.house].short}.`));
-    todo.push(pick(r, HOUSES[vH].do), pick(r, HOUSES[mH].do), `Lean into growth: ${pick(r, HOUSES[jH].do).toLowerCase()}.`);
+    lunar.forEach((l) => todo.push(FR
+      ? `${fmt(l.date)} · ${l.phase.name} en ${l.sign.name} : ${l.phase === PHASES[0] ? "lancez quelque chose de nouveau autour" : "terminez ou lâchez ce qui est prêt autour"} ${de(HOUSES[l.house].short)}.`
+      : `${fmt(l.date)} · ${l.phase.name} in ${l.sign.name}: ${l.phase === PHASES[0] ? "start something new around" : "complete or release what's ready around"} ${HOUSES[l.house].short}.`));
+    todo.push(pick(r, HOUSES[vH].do), pick(r, HOUSES[mH].do), t(`Lean into growth: ${pick(r, HOUSES[jH].do).toLowerCase()}.`, `Misez sur la croissance : ${pick(r, HOUSES[jH].do).toLowerCase()}.`));
     const avoid = [pick(r, HOUSES[sunH1].avoid), pick(r, HOUSES[sH].avoid)];
 
     const planetShifts = ["mercury", "venus", "mars"].flatMap((p) => Astro.planetEvents(p, start, addDays(end, -1)))
       .map((e) => {
         const h = solarHouse(e.sign, chart.houseSign);
         const P = PLANETS[e.planet].name;
-        if (e.type === "ingress") return { date: e.date, title: `${P} enters ${SIGNS[e.sign].name}`, text: `Activates your ${ORD[h]} house: ${HOUSES[h].short}.` };
-        if (e.type === "station-retro") return { date: e.date, title: `${P} turns retrograde`, text: "Slow down, review and revise." };
-        return { date: e.date, title: `${P} turns direct`, text: "Stalled plans start moving again." };
+        if (e.type === "ingress") return { date: e.date, title: t(`${P} enters ${SIGNS[e.sign].name}`, `${P} entre en ${SIGNS[e.sign].name}`), text: t(`Activates your ${ORD[h]} house: ${HOUSES[h].short}.`, `Active votre ${ORD[h]} maison : ${HOUSES[h].short}.`) };
+        if (e.type === "station-retro") return { date: e.date, title: t(`${P} turns retrograde`, `${P} devient rétrograde`), text: t("Slow down, review and revise.", "Ralentissez, revoyez et corrigez.") };
+        return { date: e.date, title: t(`${P} turns direct`, `${P} redevient direct`), text: t("Stalled plans start moving again.", "Les projets bloqués repartent.") };
       });
 
     const keyDates = [
-      ...lunar.map((l) => ({ date: l.date, title: `${l.phase.icon} ${l.phase.name} in ${l.sign.name}`, text: `Your ${ORD[l.house]} house of ${HOUSES[l.house].name.toLowerCase()}.` })),
-      ...sunEvents.map((e) => ({ date: e.date, title: `☉ Sun enters ${SIGNS[e.sign].name}`, text: `${SIGNS[e.sign].name} season begins.` })),
+      ...lunar.map((l) => ({ date: l.date, title: t(`${l.phase.icon} ${l.phase.name} in ${l.sign.name}`, `${l.phase.icon} ${l.phase.name} en ${l.sign.name}`),
+        text: t(`Your ${ORD[l.house]} house of ${HOUSES[l.house].name.toLowerCase()}.`, `Votre ${ORD[l.house]} maison : ${HOUSES[l.house].name.toLowerCase()}.`) })),
+      ...sunEvents.map((e) => ({ date: e.date, title: t(`☉ Sun enters ${SIGNS[e.sign].name}`, `☉ Le Soleil entre en ${SIGNS[e.sign].name}`), text: t(`${SIGNS[e.sign].name} season begins.`, `Début de la saison ${SIGNS[e.sign].name}.`) })),
       ...planetShifts,
-      ...power.map((p) => ({ date: p.date, title: "★ Power day", text: "Your best odds this month — schedule what matters." })),
-      ...(birthday ? [{ date: birthday, title: "🎂 Your birthday", text: "Solar return — a fresh start." }] : []),
+      ...power.map((p) => ({ date: p.date, title: t("★ Power day", "★ Jour fort"), text: t("Your best odds this month — schedule what matters.", "Vos meilleures chances du mois : planifiez ce qui compte.") })),
+      ...(birthday ? [{ date: birthday, title: t("🎂 Your birthday", "🎂 Votre anniversaire"), text: t("Solar return — a fresh start.", "Retour solaire : un nouveau départ.") }] : []),
     ].sort((a, b) => a.date - b.date);
 
     return {
@@ -396,8 +424,8 @@ const Reading = (() => {
       headline: HOUSES[sunH2 && nDays - new Date(sunEvents[0].date).getDate() > 15 ? sunH2 : sunH1].headline,
       overview: overview.join(" "),
       areas: areas(r, average(days.map((d) => d.scores)), {
-        love: `Venus in your ${ORD[vH]} house draws affection through ${HOUSES[vH].short}.`,
-        money: `Jupiter blesses ${HOUSES[jH].short}.`,
+        love: t(`Venus in your ${ORD[vH]} house draws affection through ${HOUSES[vH].short}.`, `Vénus dans votre ${ORD[vH]} maison attire l'affection par ${HOUSES[vH].short}.`),
+        money: t(`Jupiter blesses ${HOUSES[jH].short}.`, `Jupiter favorise ${HOUSES[jH].short}.`),
       }),
       todo: [...new Set(todo)], avoid: [...new Set(avoid)],
       keyDates,
