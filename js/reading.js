@@ -240,7 +240,7 @@ const Reading = (() => {
     const marsHouse = solarHouse(tr.mars, chart.houseSign);
 
     let moonLine = FR
-      ? `${startSign !== tr.moon && endSign === tr.moon ? `La Lune est entrée en ${SIGNS[tr.moon].name} cette nuit. ` : ""}La Lune est en ${SIGNS[tr.moon].name} et traverse votre ${ORD[moonHouse]} maison (${H.name.toLowerCase()}) : aujourd'hui, l'accent est mis sur ${H.short}.`
+      ? `${startSign !== tr.moon && endSign === tr.moon ? `La Lune est entrée en ${SIGNS[tr.moon].name} cette nuit et traverse` : `La Lune est en ${SIGNS[tr.moon].name} et traverse`} votre ${ORD[moonHouse]} maison (${H.name.toLowerCase()}) : aujourd'hui, l'accent est mis sur ${H.short}.`
       : `The Moon is in ${SIGNS[tr.moon].name}, moving through your ${ORD[moonHouse]} house of ${H.name.toLowerCase()} — today's focus is ${H.short}.`;
     if (endSign !== tr.moon) moonLine += t(` Later today it slips into ${SIGNS[endSign].name}, shifting the mood toward ${HOUSES[solarHouse(endSign, chart.houseSign)].short}.`,
       ` Plus tard dans la journée, elle passe en ${SIGNS[endSign].name} et l'humeur se tourne vers ${HOUSES[solarHouse(endSign, chart.houseSign)].short}.`);

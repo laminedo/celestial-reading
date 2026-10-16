@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Monthly Horoscopes · Celestial Reading</title>
-  <meta name="description" content="Monthly horoscopes for all 12 signs, ready to post: image cards and a PDF guide in English or French.">
+  <title>Horoscopes to Share · Celestial Reading</title>
+  <meta name="description" content="Daily and monthly horoscopes for all 12 signs, ready to post: image cards and a PDF guide in English or French.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610152317">
+  <link rel="stylesheet" href="styles.css?v=202610152353">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#090a1a">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -25,8 +25,8 @@
   <main class="share-page">
     <section class="intake share-intro">
       <p class="eyebrow" data-fr="Horoscopes à partager">Horoscopes to share</p>
-      <h1 id="share-title">Monthly horoscopes for all 12 signs</h1>
-      <p class="lede" data-fr="Une carte par signe, calculée à partir des vraies positions des planètes du mois, plus une couverture et un guide PDF. Téléchargez le pack et publiez-le sur Facebook le 1er du mois.">One card per sign, calculated from the month's real planet positions, plus a cover and a PDF guide. Download the bundle and post it on Facebook on the 1st of the month.</p>
+      <h1 id="share-title">Horoscopes for all 12 signs</h1>
+      <p class="lede" id="share-lede"></p>
     </section>
 
     <section class="card share-settings">
@@ -39,10 +39,15 @@
       <p class="hint" data-fr="Enregistré sur cet appareil. Le code QR mène les lecteurs à leur lecture personnelle gratuite.">Saved on this device. The QR code takes readers to their free personal reading.</p>
     </section>
 
+    <div class="mode-switch" role="tablist" aria-label="Horoscope type">
+      <button role="tab" data-mode="daily" data-fr="Quotidien">Daily</button>
+      <button role="tab" data-mode="monthly" data-fr="Mensuel">Monthly</button>
+    </div>
+
     <div class="period-nav">
-      <button class="ghost icon" id="month-prev" aria-label="Previous month" data-fr-aria-label="Mois précédent">‹</button>
+      <button class="ghost icon" id="month-prev" aria-label="Previous" data-fr-aria-label="Précédent">‹</button>
       <div class="period-label"><span id="month-label"></span><small id="month-hint"></small></div>
-      <button class="ghost icon" id="month-next" aria-label="Next month" data-fr-aria-label="Mois suivant">›</button>
+      <button class="ghost icon" id="month-next" aria-label="Next" data-fr-aria-label="Suivant">›</button>
     </div>
 
     <section class="card share-actions">
@@ -72,11 +77,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-  <script src="js/i18n.js?v=202610152317"></script>
-  <script src="js/data.js?v=202610152317"></script>
-  <script src="js/data-fr.js?v=202610152317"></script>
-  <script src="js/astro.js?v=202610152317"></script>
-  <script src="js/reading.js?v=202610152317"></script>
-  <script src="js/share.js?v=202610152317"></script>
+  <script src="js/i18n.js?v=202610152353"></script>
+  <script src="js/data.js?v=202610152353"></script>
+  <script src="js/data-fr.js?v=202610152353"></script>
+  <script src="js/astro.js?v=202610152353"></script>
+  <script src="js/reading.js?v=202610152353"></script>
+  <script src="js/share.js?v=202610152353"></script>
 </body>
 </html>
