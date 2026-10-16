@@ -21,11 +21,21 @@ Enter your birthday and get your full astrological reading: a birth chart, plus 
 - **Career:** the work that fits your Midheaven, Sun, career-house ruler, Jupiter and Saturn, plus how you earn best. Your ideal partner from your Descendant, Venus, Mars and Moon, with your most compatible signs and Life Path numbers.
 - **Luck & Numbers:** the best planetary hours each day to start important work, your luckiest days for the next 60 days, the best months of the coming year, and Jupiter's lucky years through your houses. Also your personal numbers and a house number calculator that reduces any address to one digit and compares it with your Life Path. Lottery and games of chance stay random: the app says so and doesn't claim to change the odds.
 - **Places & Car:** relocation astrology ranks countries and US states where Jupiter, Venus or the Sun sit on an angle of your chart. You also get a car style, example models and colors for your chart, and a build-year checker for cars and houses (number and Chinese zodiac year).
+- **Optional account sync:** sign in with an email link to back up your profiles, journal, moon goals and settings and see them on all your devices. Without signing in, everything stays only in your browser.
 - You can move to past or future days, weeks and months, and your birth details are remembered on your device.
 
 ## How it works
 
 Planet positions use Paul Schlyter's low-precision orbital formulas (accurate to about 1°), with the main lunar, Jupiter and Saturn perturbation terms. Readings come from where planets are in the sky now, compared with your chart. Plain HTML, CSS and JavaScript: no build step and no dependencies. City lookup uses the free [Open-Meteo geocoding API](https://open-meteo.com/en/docs/geocoding-api).
+
+## Account sync (Supabase)
+
+Sync uses a Supabase project (`celestial-reading`). Each profile, journal day, goal and setting is one row in `sync_items` (schema in `supabase/migrations/`), protected by row-level security so people can only read their own rows. When the same item changes on two devices, the newest edit wins, and deletions sync too. The publishable key in `js/sync.js` is meant to be public.
+
+One-time setup in the Supabase dashboard:
+
+1. **Authentication → URL Configuration:** set the Site URL to `https://laminedo.github.io/celestial-reading/`, and add that URL plus `http://127.0.0.1:5173/` under Redirect URLs.
+2. **Authentication → Emails → SMTP settings:** add your own email provider (for example Resend, Postmark or SendGrid). Supabase's built-in sender only emails members of your Supabase team, and only a few emails per hour.
 
 ## Run locally
 

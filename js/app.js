@@ -5,7 +5,10 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+    set(k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable */ }
+      if (window.Sync) Sync.changed(k);
+    },
   };
 
   const state = { birth: null, chart: null, tab: "daily", offset: 0, profileId: null, adding: false };
@@ -895,11 +898,88 @@
   }
 
   // ---------- boot ----------
+  // ---------- account sync ----------
+  const acct = $("#account-dialog");
+  const syncLabel = () => {
+    const s = Sync.status;
+    if (!Sync.user) return s.state === "unavailable" ? "Sync offline" : "Sign in to sync";
+    return { syncing: "Syncing…", synced: "Synced ✓", error: "Sync paused" }[s.state] || "Account";
+  };
+  function renderAccount() {
+    $("#account-btn").textContent = syncLabel();
+    $("#account-btn").classList.toggle("signed-in", Boolean(Sync.user));
+    const body = $("#account-body");
+    if (!Sync.user) {
+      body.innerHTML = `
+        <h3>Sync across your devices</h3>
+        <p class="small-p">Sign in with your email to back up your profiles, journal and moon goals, and see them on your phone and computer. No password: we email you a sign-in link.</p>
+        <form id="signin-form" class="stack">
+          <label class="field"><span>Email</span><input type="email" name="email" required autocomplete="email" placeholder="you@example.com"></label>
+          <button class="primary" type="submit">Email me a sign-in link</button>
+          <p class="saved-msg" id="signin-msg" aria-live="polite"></p>
+        </form>
+        <p class="hint">Signing in is optional. Without it, everything stays only in this browser.</p>`;
+      $("#signin-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = $("#signin-msg"), btn = e.target.querySelector("button");
+        btn.disabled = true; msg.classList.remove("error"); msg.textContent = "Sending…";
+        try {
+          await Sync.signIn(e.target.elements.email.value.trim());
+          msg.textContent = "Check your inbox and tap the link to finish signing in. You can close this window.";
+        } catch (err) {
+          msg.classList.add("error"); msg.textContent = err.message || "Couldn't send the link. Try again in a minute.";
+        } finally { btn.disabled = false; }
+      });
+    } else {
+      const last = Sync.lastSync();
+      const s = Sync.status;
+      body.innerHTML = `
+        <h3>Your account</h3>
+        <p class="small-p">Signed in as <b>${esc(Sync.user.email || "")}</b>.</p>
+        <p class="small-p">${s.state === "error" ? `<span class="warn-text">${esc(s.message)}</span>` : s.state === "syncing" ? "Syncing…" : last ? `Last synced ${new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.` : ""}</p>
+        <div class="btn-row">
+          <button class="ghost small" id="sync-now">Sync now</button>
+          <button class="ghost small" id="sign-out">Sign out</button>
+          <button class="ghost small danger" id="delete-cloud">Delete my cloud data</button>
+        </div>
+        <p class="hint">Your profiles, journal, moon goals and saved settings sync. Only you can read them.</p>`;
+      $("#sync-now").addEventListener("click", () => Sync.syncNow());
+      $("#sign-out").addEventListener("click", async () => {
+        const keep = window.confirm("Keep a copy of your data on this device after signing out?\n\nOK = keep it here\nCancel = remove it from this device (it stays in your account)");
+        await Sync.signOut({ keepLocal: keep });
+      });
+      $("#delete-cloud").addEventListener("click", async () => {
+        if (!window.confirm("Permanently delete everything stored in your account? Data on this device stays.")) return;
+        try { await Sync.deleteCloudData(); } catch (err) { window.alert(err.message || "Couldn't delete. Try again."); }
+      });
+    }
+  }
+  $("#account-btn").addEventListener("click", () => { renderAccount(); acct.showModal(); });
+  $("#account-close").addEventListener("click", () => acct.close());
+  acct.addEventListener("click", (e) => { if (e.target === acct) acct.close(); });
+  Sync.on("status", () => { $("#account-btn").textContent = syncLabel(); $("#account-btn").classList.toggle("signed-in", Boolean(Sync.user)); if (acct.open) renderAccount(); });
+
+  // Data arrived from another device: reload profiles and redraw.
+  Sync.on("remote", () => {
+    const list = getProfiles();
+    const want = store.get("celestial.active");
+    const p = list.find((x) => x.id === state.profileId) || list.find((x) => x.id === want) || list[0];
+    if (!p) { state.birth = null; state.chart = null; state.profileId = null; if (!$("#results").hidden) showIntake(); return; }
+    if ($("#intake").hidden || !state.adding) {
+      const tab = state.tab, offset = state.offset;
+      load(p.birth, p.id);
+      state.tab = tab; state.offset = offset;
+      render();
+    }
+  });
+
   $("#cancel-btn").addEventListener("click", () => { state.adding = false; if (state.chart) load(state.birth, state.profileId); });
   const activeId = store.get("celestial.active");
   const profiles = getProfiles();
   const saved = profiles.find((p) => p.id === activeId) || profiles[0];
   if (saved) load(saved.birth, saved.id);
+  $("#account-btn").textContent = syncLabel();
+  Sync.init();
 
   // Installable, offline-capable app.
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {

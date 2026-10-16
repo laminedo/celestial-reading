@@ -1,7 +1,7 @@
 // Offline support: cache the app shell, always try the network first so updates show up.
-const CACHE = "celestial-v1";
+const CACHE = "celestial-v2";
 const SHELL = ["./", "index.html", "styles.css", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png",
-  "js/data.js", "js/astro.js", "js/reading.js", "js/destiny.js", "js/places.js", "js/life.js", "js/views.js", "js/app.js"];
+  "js/data.js", "js/astro.js", "js/reading.js", "js/destiny.js", "js/places.js", "js/life.js", "js/views.js", "js/sync.js", "js/app.js"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

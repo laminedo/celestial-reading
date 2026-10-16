@@ -408,3 +408,16 @@ textarea:focus { border-color: var(--violet); outline: none; }
 .timeline .checks li { display: block; border: 0; padding: 1px 0 1px 20px; }
 .timeline .checks { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2px 16px; }
 .months.two-col { columns: 2; column-gap: 28px; } .months.two-col li { break-inside: avoid; } @media (max-width: 640px) { .months.two-col { columns: 1; } }
+
+/* ---------- account sync ---------- */
+.site-header { gap: 8px; }
+.brand { margin-right: auto; }
+.account-btn { white-space: nowrap; }
+.account-btn.signed-in { border-color: rgba(125, 219, 163, 0.45); color: var(--good); }
+.dialog { width: min(440px, calc(100vw - 32px)); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 24px; background: var(--bg-2); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
+.dialog::backdrop { background: rgba(4, 4, 14, 0.7); backdrop-filter: blur(3px); }
+.dialog .close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; font-size: 20px; }
+.dialog h3 { margin-right: 36px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ghost.danger { color: var(--warn); border-color: rgba(242, 160, 123, 0.4); }
+.warn-text, .saved-msg.error { color: var(--warn); }
