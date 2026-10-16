@@ -272,3 +272,43 @@ button:disabled { opacity: 0.7; cursor: wait; }
 .field-error { color: var(--warn); font-size: 12.5px; margin: -8px 0 0; }
 .field-error:empty { display: none; }
 input[aria-invalid="true"] { border-color: var(--warn); }
+
+/* ---------- career, luck, places ---------- */
+.mt-s { margin-top: 12px; }
+.gold { color: var(--gold); }
+.chip.gold { border-color: rgba(233, 196, 122, 0.55); color: var(--gold); }
+.hours { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.hour { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(8, 9, 26, 0.45); border: 1px solid transparent; font-size: 13px; }
+.hour small { display: block; color: var(--muted); font-size: 11.5px; }
+.hour.night { background: rgba(8, 9, 26, 0.75); }
+.hour.best { border-color: rgba(233, 196, 122, 0.6); box-shadow: 0 0 18px rgba(233, 196, 122, 0.12); }
+.hour.weak { opacity: 0.55; }
+.h-glyph { font-size: 20px; color: var(--gold); width: 22px; text-align: center; }
+.hour-key { margin-top: 14px; font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.hour-key b { color: var(--text); font-weight: 500; }
+.months li { display: grid; grid-template-columns: 82px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--card-border); font-size: 13.5px; }
+.months li:last-child { border-bottom: 0; }
+.months li span { color: var(--muted); }
+.months li.best strong, .months li.best span { color: var(--gold); }
+.timeline li.now time { color: var(--text); }
+.timeline li.now strong { color: var(--gold); }
+.lucky.nums { grid-template-columns: repeat(3, 1fr); }
+.field { display: grid; gap: 6px; font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.check input { width: 16px; height: 16px; accent-color: var(--gold); }
+.num-result { display: flex; gap: 14px; align-items: center; margin: 4px 0 8px; }
+.num-result .big-num { margin: 0; }
+.num-result small { display: block; color: var(--violet); font-size: 12.5px; }
+.match { font-size: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(8, 9, 26, 0.45); border-left: 3px solid var(--muted); margin-top: 8px; }
+.match.great, .match.good { border-left-color: var(--good); }
+.match.bad { border-left-color: var(--warn); }
+.home-list li { padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--card-border); }
+.home-list li:last-child { border-bottom: 0; }
+.home-list b { display: inline-block; width: 22px; font-family: var(--display); font-size: 20px; }
+.home-list small { color: var(--muted); margin-left: 6px; }
+.place-list { padding-left: 20px; list-style: decimal; }
+.place-list li { padding: 6px 0; }
+.place-list li::marker { color: var(--gold); }
+.place-list p { color: var(--muted); font-size: 13.5px; margin: 2px 0 0; }
+.place-list.hard li::marker { color: var(--warn); }
+@media (max-width: 640px) { .hours { grid-template-columns: 1fr 1fr; } }

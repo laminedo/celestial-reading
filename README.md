@@ -9,6 +9,9 @@ Enter your birthday and get your full astrological reading: a birth chart, plus 
 - **Today:** the Moon's sign, phase and house focus, a "What you need to do" checklist, things to avoid, love/career/wellness/money ratings, and a lucky number, color and hour.
 - **This week:** a 7-day energy strip with your best days and the ones to take easy, moon phases and planets changing sign.
 - **This month:** an energy calendar, power days, new and full moons, retrogrades and key dates.
+- **Career & Love:** the work that fits your Midheaven, Sun, career-house ruler, Jupiter and Saturn, plus how you earn best. Your ideal partner from your Descendant, Venus, Mars and Moon, with your most compatible signs and Life Path numbers.
+- **Luck & Numbers:** the best planetary hours each day to start important work, your luckiest days for the next 60 days, the best months of the coming year, and Jupiter's lucky years through your houses. Also your personal numbers and a house number calculator that reduces any address to one digit and compares it with your Life Path. Lottery and games of chance stay random: the app says so and doesn't claim to change the odds.
+- **Places & Car:** relocation astrology ranks countries and US states where Jupiter, Venus or the Sun sit on an angle of your chart. You also get a car style, example models and colors for your chart, and a build-year checker for cars and houses (number and Chinese zodiac year).
 - You can move to past or future days, weeks and months, and your birth details are remembered on your device.
 
 ## How it works

@@ -292,7 +292,7 @@
     const c = state.chart;
     const sun = SIGNS[c.signs.sun], moon = SIGNS[c.signs.moon];
     const greeting = c.name ? `${esc(c.name)}, you're a` : "You're a";
-    const tabs = [["daily", "Today"], ["weekly", "This Week"], ["monthly", "This Month"], ["chart", "Birth Chart"]];
+    const tabs = [["daily", "Today"], ["weekly", "This Week"], ["monthly", "This Month"], ["chart", "Birth Chart"], ["career", "Career & Love"], ["luck", "Luck & Numbers"], ["places", "Places & Car"]];
 
     $("#results").innerHTML = `
       <section class="card profile">
@@ -316,7 +316,7 @@
         ${tabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}" class="${state.tab === k ? "active" : ""}">${l}</button>`).join("")}
       </nav>
 
-      <div id="panel">${state.tab === "chart" ? renderChart(c) : renderPeriod(c)}</div>
+      <div id="panel">${state.tab === "chart" ? renderChart(c) : state.tab === "career" ? renderCareer(c) : state.tab === "luck" ? renderLuck(c) : state.tab === "places" ? renderPlaces(c) : renderPeriod(c)}</div>
     `;
 
     $("#results").querySelectorAll("[data-tab]").forEach((b) =>
@@ -330,6 +330,8 @@
         store.set(cb.dataset.key, done);
         cb.closest("li").classList.toggle("done", cb.checked);
       }));
+    if (state.tab === "luck") bindAddress(c);
+    if (state.tab === "places") bindYear(c);
   }
 
   function renderPeriod(c) {
@@ -454,6 +456,252 @@
         <div class="cal">${cells.join("")}</div>
         <p class="hint"><span class="key power"></span> power day &nbsp; <span class="key tough"></span> go easy &nbsp; brighter = stronger day for you</p>
       </section>`;
+  }
+
+  // ---------- career & love ----------
+  const signChip = (i) => `<span class="badge">${SIGNS[i].glyph} ${SIGNS[i].name}</span>`;
+  const precisionNote = (what) => `<p class="note">ⓘ Add your birth time and city for a precise ${what}. This version uses your Sun and Venus signs.</p>`;
+
+  function renderCareer(c) {
+    const K = Destiny.career(c);
+    const P = Destiny.partner(c);
+    return `
+      <section class="card hero-reading">
+        <p class="eyebrow">Your natural line of work</p>
+        <h2>Where your talents pay off</h2>
+        <p class="overview">${esc(K.style)} ${esc(K.lp)}</p>
+        <div class="badges mt-s">${K.fields.map((f) => `<span class="badge good">${esc(f)}</span>`).join("")}</div>
+        ${K.approx ? precisionNote("career reading with your Midheaven") : ""}
+      </section>
+
+      <div class="grid-2">
+        <section class="card">
+          <h3>What your chart says about work</h3>
+          <ul class="placements">${K.points.map((p) => `<li><div><strong>${esc(p.title)}</strong><p>${esc(p.text)}</p></div></li>`).join("")}</ul>
+        </section>
+        <section class="card">
+          <h3>${esc(K.money.title)}</h3>
+          <p class="small-p">${esc(K.money.text)}</p>
+          <h3 class="mt">Your ideal partner</h3>
+          <p class="overview">${esc(P.ideal)}</p>
+          <h4 class="mt">Most compatible signs</h4>
+          <div class="badges">${P.best.map(signChip).join("")}</div>
+          <h4 class="mt">Takes more work</h4>
+          <div class="badges">${P.challenge.map((i) => `<span class="badge warn">${SIGNS[i].glyph} ${SIGNS[i].name}</span>`).join("")}</div>
+          <h4 class="mt">Life Path match</h4>
+          <p class="small-p">Your Life Path reduces to ${P.lpMatch.lp}. Partners with Life Path ${P.lpMatch.numbers.join(", ")} share your number family and tend to understand you easily.</p>
+          ${P.approx ? precisionNote("partner reading with your Descendant") : ""}
+        </section>
+      </div>
+
+      <section class="card">
+        <h3>What you need in love</h3>
+        <ul class="placements">${P.points.map((p) => `<li><div><strong>${esc(p.title)}</strong><p>${esc(p.text)}</p></div></li>`).join("")}</ul>
+        <p class="small-p mt-s">${esc(P.loveText)}</p>
+      </section>`;
+  }
+
+  // ---------- luck & numbers ----------
+  const tfmt = (d) => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
+  function renderLuck(c) {
+    const date = new Date(); date.setHours(12, 0, 0, 0); date.setDate(date.getDate() + state.offset);
+    const H = Destiny.planetaryHours(c, date, c.place);
+    const D = Destiny.luckyDays(c, c.place);
+    const M = Destiny.luckyMonths(c);
+    const J = Destiny.jupiterYears(c);
+    const N = Destiny.personalNumbers(c, state.birth);
+    const homes = Destiny.bestHomeNumbers(c);
+    const savedAddr = store.get("celestial.address") || "";
+    const stars = (n) => n ? "★".repeat(n) + "☆".repeat(3 - n) : "☆☆☆";
+    const range = (p) => `${p.from ? fmtDate(p.from, { month: "short", year: "numeric" }) : "Now"} – ${p.to ? fmtDate(p.to, { month: "short", year: "numeric" }) : "later"}`;
+
+    return `
+      <section class="card alert">
+        <strong>Read this first</strong>
+        <p>Lottery draws and games of chance are random. No chart, day, hour or number can change your odds, and every ticket has the same chance. Treat these timings as tradition and fun. Set a budget you can afford to lose. If gambling stops being fun, call or text 1-800-GAMBLER (US) for free, confidential help.</p>
+      </section>
+
+      <div class="period-nav">
+        <button class="ghost icon" data-nav="-1" aria-label="Previous day">‹</button>
+        <div class="period-label">
+          <span>${fmtDate(date, { weekday: "long", month: "long", day: "numeric" })}</span>
+          ${state.offset !== 0 ? `<button class="link" data-nav="reset">Back to today</button>` : `<small>Today</small>`}
+        </div>
+        <button class="ghost icon" data-nav="1" aria-label="Next day">›</button>
+      </div>
+
+      <section class="card hero-reading">
+        <p class="eyebrow">Best start times for success and money</p>
+        <h2>${H.best.map((h) => tfmt(h.from)).join(" · ")}</h2>
+        <p class="overview">Today is ruled by ${PLANETS[H.dayRuler].name}. Your chart ruler is ${PLANETS[H.lucky.chartRuler].name}, your money planet is ${PLANETS[H.lucky.moneyRuler].name} and your career planet is ${PLANETS[H.lucky.careerRuler].name}. These are the planetary hours that suit you best for starting important work, signing deals, or anything you want to grow.</p>
+        <div class="chips">
+          <span class="chip">☀︎ Sunrise ${tfmt(H.sunrise)}</span><span class="chip">☾︎ Sunset ${tfmt(H.sunset)}</span>
+          ${H.best.map((h) => `<span class="chip gold">${PLANETS[h.planet].glyph} ${PLANETS[h.planet].name} hour ${tfmt(h.from)}–${tfmt(h.to)}</span>`).join("")}
+        </div>
+        ${H.approx ? `<p class="note">ⓘ ${c.place ? "Sunrise is approximate at this latitude." : "Add your birth city to calculate sunrise for your location. Times below assume 6am sunrise."}</p>` : ""}
+      </section>
+
+      <section class="card">
+        <h3>All planetary hours</h3>
+        <div class="hours">
+          ${H.hours.map((h) => `
+            <div class="hour ${h.best ? "best" : ""} ${h.score < 0 ? "weak" : ""} ${h.night ? "night" : ""}" title="${esc(H.meaning[h.planet])}">
+              <span class="h-glyph">${PLANETS[h.planet].glyph}</span>
+              <span><strong>${tfmt(h.from)}</strong> <small>${PLANETS[h.planet].name}</small></span>
+            </div>`).join("")}
+        </div>
+        <ul class="hour-key">
+          ${["jupiter", "venus", "sun", "mercury", "saturn"].map((k) => `<li><b>${PLANETS[k].glyph} ${PLANETS[k].name}:</b> ${esc(H.meaning[k])}</li>`).join("")}
+        </ul>
+        <p class="hint">Times in your device's time zone. Planetary hours divide daylight and night into 12 parts each, so they're longer in summer.</p>
+      </section>
+
+      <div class="grid-2">
+        <section class="card">
+          <h3>Luckiest days ahead</h3>
+          <ol class="timeline">
+            ${D.top.map((d) => `
+              <li><time>${fmtDate(d.date, { weekday: "short", month: "short", day: "numeric" })}</time>
+                <div><strong>${d.phase.icon} ${d.hour ? `Best hour ${tfmt(d.hour.from)} (${PLANETS[d.hour.planet].name})` : ""}</strong>
+                <p>${esc(d.reasons.join(" · ") || "A generally favorable day")}</p></div></li>`).join("")}
+          </ol>
+        </section>
+        <section class="card">
+          <h3>Best months (next 12)</h3>
+          <ul class="months">
+            ${M.map((m) => `
+              <li class="${m.best ? "best" : ""}">
+                <strong>${fmtDate(m.date, { month: "short", year: "numeric" })}</strong>
+                <span>${m.best ? "★ " : ""}${esc(m.reasons.slice(0, 2).join(" · ") || "Steady month")}</span>
+              </li>`).join("")}
+          </ul>
+        </section>
+      </div>
+
+      <section class="card">
+        <h3>Your lucky years: Jupiter's journey through your chart</h3>
+        <p class="small-p">Jupiter, the planet of luck and money, spends about a year in each sign. When it moves through your 2nd, 5th, 8th, 10th or 11th house, traditional astrology calls it a peak time for money, opportunity and good fortune.</p>
+        <ol class="timeline">
+          ${J.map((p) => `
+            <li class="${p.current ? "now" : ""}"><time>${range(p)}</time>
+              <div><strong>${stars(p.stars)} Jupiter in ${SIGNS[p.sign].name} · your ${Reading.ORD[p.house]} house${p.current ? " · now" : ""}${p.returnYear ? " · Jupiter return" : ""}</strong>
+              <p>${esc(p.text)}${p.returnYear ? " Jupiter returns to where it was when you were born: a lucky 12-year reset." : ""}</p></div></li>`).join("")}
+        </ol>
+      </section>
+
+      <div class="grid-2">
+        <section class="card">
+          <h3>Your personal numbers</h3>
+          <div class="lucky nums">
+            <div><small>Life Path</small><strong>${N.lifePath}</strong></div>
+            <div><small>Birthday</small><strong>${N.birthday}</strong></div>
+            <div><small>Personal year</small><strong>${N.personalYear}</strong></div>
+            <div><small>Personal month</small><strong>${N.personalMonth}</strong></div>
+            <div><small>Today</small><strong>${N.personalDay}</strong></div>
+            ${N.expression ? `<div><small>Name</small><strong>${N.expression}</strong></div>` : `<div><small>Sun sign</small><strong>${N.sunLucky}</strong></div>`}
+          </div>
+          <p class="small-p mt-s">Your number set: <strong class="gold">${N.set.join(" · ")}</strong>. Use these when you choose numbers for fun. They don't make a combination more likely to win.</p>
+        </section>
+        <section class="card">
+          <h3>House number calculator</h3>
+          <label class="field"><span>Your address</span>
+            <input type="text" id="addr-input" placeholder="e.g. 1472 Maple St, Apt 3B" value="${esc(savedAddr)}" autocomplete="street-address"></label>
+          <label class="check"><input type="checkbox" id="addr-letters"> Count street letters too (Pythagorean)</label>
+          <div id="addr-result" aria-live="polite"></div>
+          <h4 class="mt">Best house numbers for you</h4>
+          <ul class="home-list">${homes.map((h) => `<li><b class="gold">${h.n}</b> ${esc(h.title)} <small>e.g. ${h.examples.join(", ")}</small></li>`).join("")}</ul>
+        </section>
+      </div>`;
+  }
+
+  function bindAddress(c) {
+    const input = $("#addr-input"), letters = $("#addr-letters"), out = $("#addr-result");
+    if (!input) return;
+    const update = () => {
+      store.set("celestial.address", input.value);
+      const r = Destiny.addressNumber(input.value, { includeLetters: letters.checked });
+      if (!r) { out.innerHTML = ""; return; }
+      if (r.error) { out.innerHTML = `<p class="field-error">${esc(r.error)}</p>`; return; }
+      const m = Destiny.matchHome(r.value, c);
+      out.innerHTML = `
+        <div class="num-result">
+          <span class="big-num">${r.value}</span>
+          <div><strong>${esc(r.title)}</strong><small>${r.work.map(esc).join(" → ")}</small></div>
+        </div>
+        <p class="small-p">${esc(r.text)}</p>
+        <p class="match ${m.level}"><b>${esc(m.label)}.</b> ${esc(m.text)}</p>`;
+    };
+    input.addEventListener("input", update);
+    letters.addEventListener("change", update);
+    update();
+  }
+
+  // ---------- places & car ----------
+  function placeList(list, cls = "") {
+    return `<ol class="place-list ${cls}">${list.map((p) => `<li><strong>${esc(p.name)}</strong><p>${esc(p.text)}${p.caution ? " " + esc(p.caution) : ""}</p></li>`).join("")}</ol>`;
+  }
+
+  function renderPlaces(c) {
+    const R = Places.relocation(c);
+    const car = Places.car(c);
+    const savedYear = store.get("celestial.buildYear") || "";
+    return `
+      <section class="card hero-reading">
+        <p class="eyebrow">Where you thrive</p>
+        <h2>Best countries and US states for you</h2>
+        <p class="overview">This uses relocation astrology: your birth chart is recast as if you were born in each place. Where Jupiter, Venus or the Sun land on an angle of your chart, life tends to feel luckier and easier. Where Saturn or Mars land there, it's usually harder work.</p>
+      </section>
+      ${R ? `
+      <div class="grid-2">
+        <section class="card"><h3>Best countries</h3>${placeList(R.countries)}
+          ${R.countriesHard.length ? `<h4 class="mt">More challenging</h4>${placeList(R.countriesHard, "hard")}` : ""}</section>
+        <section class="card"><h3>Best US states</h3>${placeList(R.states)}
+          ${R.statesHard.length ? `<h4 class="mt">More challenging</h4>${placeList(R.statesHard, "hard")}` : ""}</section>
+      </div>` : `
+      <section class="card"><p class="note">ⓘ Relocation needs your exact birth time and birth city. Tap "Edit birth details" at the top to add them.</p></section>`}
+
+      <section class="card">
+        <p class="eyebrow">Your car</p>
+        <h2>${esc(car.main.type)}</h2>
+        <p class="overview">Your chart is mostly ${car.main.element}. ${esc(car.main.why)} ${esc(car.drive)}</p>
+        <div class="grid-2 inner">
+          <div><h4>Models that match your energy</h4><div class="badges">${car.main.examples.map((m) => `<span class="badge good">${esc(m)}</span>`).join("")}</div></div>
+          ${car.alt ? `<div><h4>Your Venus taste: ${esc(car.alt.type.toLowerCase())}</h4><div class="badges">${car.alt.examples.map((m) => `<span class="badge">${esc(m)}</span>`).join("")}</div></div>` : ""}
+          <div><h4>Lucky colors</h4><p>${car.colors.map(esc).join(" · ")}</p></div>
+          <div><h4>Best build years (recent)</h4><p>${car.years.length ? car.years.map((y) => `<b class="gold">${y.year}</b>`).join(" · ") : "None stand out. Any year in your number family works."}</p></div>
+        </div>
+        <p class="hint">Example models are for style only. Choose a car on safety ratings, reliability and budget first.</p>
+      </section>
+
+      <section class="card">
+        <h3>Build year checker: car or house</h3>
+        <p class="small-p">Enter the year a car was made or a house was built. It's reduced to one digit and compared with your Life Path, and its Chinese zodiac year is compared with yours.</p>
+        <label class="field"><span>Build year</span>
+          <input type="text" id="year-input" inputmode="numeric" maxlength="4" placeholder="e.g. 2019" value="${esc(savedYear)}"></label>
+        <div id="year-result" aria-live="polite"></div>
+      </section>`;
+  }
+
+  function bindYear(c) {
+    const input = $("#year-input"), out = $("#year-result");
+    if (!input) return;
+    const update = () => {
+      input.value = input.value.replace(/\D/g, "").slice(0, 4);
+      store.set("celestial.buildYear", input.value);
+      if (input.value.length < 4) { out.innerHTML = ""; return; }
+      const r = Places.buildYear(c, input.value);
+      if (r.error) { out.innerHTML = `<p class="field-error">${esc(r.error)}</p>`; return; }
+      out.innerHTML = `
+        <div class="num-result">
+          <span class="big-num">${r.value}</span>
+          <div><strong>${esc(r.title)}</strong><small>${r.work.map(esc).join(" → ")}</small></div>
+        </div>
+        <p class="match ${r.match.level}"><b>${esc(r.match.label)}.</b> ${esc(r.match.text)}</p>
+        <p class="match ${r.zodiac.level}">${esc(r.zodiac.text)}</p>`;
+    };
+    input.addEventListener("input", update);
+    update();
   }
 
   // ---------- birth chart ----------
