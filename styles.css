@@ -561,3 +561,18 @@ textarea:focus { border-color: var(--violet); outline: none; }
 .hc-daycover .hc-wheel b { font-size: 22px; }
 .hc-daycover .hc-swipe { font-size: 25px; line-height: 1.35; }
 .hc-swipe2 { font-size: 22px; color: #c9c7e6; font-weight: 500; }
+.share-settings .row2 { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; } @media (max-width: 640px) { .share-settings .row2 { grid-template-columns: 1fr; } }
+/* cards without footer: let text and the cover grid use the full height */
+.hcard .hc-cols p, .hcard .hc-cols li { line-height: 1.38; }
+.hc-cols h4 { font-size: calc(var(--cols-fs, 23px) - 1px); }
+.hc-moon, .hc-retro { font-size: calc(var(--cols-fs, 23px) - 3px) !important; }
+.hc-cover .hc-wheel { flex: 1; align-content: stretch; grid-auto-rows: 1fr; margin-bottom: 8px; }
+.hc-cover .hc-wheel div { justify-content: center; gap: 8px; }
+.hc-cover .hc-wheel span { font-size: 66px; }
+.hc-cover .hc-wheel b { font-size: 27px; }
+.hc-cover .hc-wheel small { font-size: 19px; }
+.hc-daycover .hc-wheel span { font-size: 62px; }
+.hc-daycover .hc-wheel b { font-size: 26px; }
+.hc-daycover .hc-stars5 { font-size: 24px !important; }
+.hc-daily .hc-moonrow span { font-size: 22px; }
+.hc-arow span { font-size: 25px; }

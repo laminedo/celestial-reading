@@ -38,7 +38,6 @@
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const deMonth = (m) => (/^[aeiouéâ]/i.test(m) ? "d'" : "de ") + m; // "d'octobre", "de mars"
   const dayFmt = (d) => d.toLocaleDateString(LOCALE, { day: "numeric", month: "short" });
-  const prettyLink = (u) => String(u || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const firstSentences = (text, n, max) => {
     const parts = String(text).split(/(?<=[.!?])\s+(?=[A-ZÀ-Ý])/);
     let out = parts.slice(0, n).join(" ");
@@ -50,15 +49,6 @@
     for (let i = 1; i <= 5; i++) html += `<i class="${v >= i ? "on" : v >= i - 0.5 ? "half" : ""}"></i>`;
     return `<span class="hc-dots">${html}</span>`;
   };
-  function qrImg(url, size) {
-    try {
-      const qr = qrcode(0, "M");
-      qr.addData(url);
-      qr.make();
-      return `<img class="hc-qr" src="${qr.createDataURL(8, 2)}" width="${size}" height="${size}" alt="">`;
-    } catch { return ""; }
-  }
-
   // ---------- content ----------
   // Sign-wide chart (also defined in reading.js; kept here so an older cached reading.js can't break this page).
   const signChart = (sign) => Reading.signChart ? Reading.signChart(sign) : {
@@ -81,20 +71,6 @@
       avoid: R.avoid[0],
       retro: R.notes.map((n) => `${n.title} (${n.range})`).slice(0, 1),
     };
-  }
-
-  function footer() {
-    const site = settings.site || DEFAULT_SITE;
-    return `
-      <div class="hc-footer">
-        ${qrImg(site, 150)}
-        <div class="hc-cta">
-          <strong>${t("Get your free personal reading", "Votre lecture personnelle gratuite")}</strong>
-          <span>${esc(prettyLink(site))}</span>
-          ${settings.fb ? `<span class="hc-fb">f&nbsp; ${esc(prettyLink(settings.fb))}</span>` : ""}
-        </div>
-        <div class="hc-brand">✧ ${esc(settings.brand || "Celestial Reading")}</div>
-      </div>`;
   }
 
   function stars(seed) {
@@ -137,7 +113,6 @@
           <div><small>${t("Day", "Jour")}</small><b>${esc(s.lucky.day)}</b></div>
           <div><small>${t("Stone", "Pierre")}</small><b>${esc(s.lucky.stone)}</b></div>
         </div>
-        ${footer()}
       </div>`;
   }
 
@@ -151,7 +126,6 @@
         <p class="hc-sub">${t("All 12 signs · love, career, money and the best days of the month", "Les 12 signes · amour, carrière, argent et les meilleurs jours du mois")}</p>
         <div class="hc-wheel">${SIGNS.map((s) => `<div style="--c:${EL_ACCENT[s.element]}"><span>${s.glyph}</span><b>${esc(s.name)}</b><small>${esc(s.dates)}</small></div>`).join("")}</div>
         <p class="hc-swipe">${t("Find your sign in the next pictures ➜", "Trouvez votre signe dans les images suivantes ➜")}</p>
-        ${footer()}
       </div>`;
   }
 
@@ -195,7 +169,6 @@
               ${D.retro.length ? `<p class="hc-retro">℞ ${esc(D.retro[0])}</p>` : ""}</div>
           </div>
         </div>
-        ${footer()}
       </div>`;
   }
 
@@ -215,21 +188,27 @@
         <p class="hc-sky">${PHASES[ph.index].icon} ${esc(PHASES[ph.index].name)} · ☽︎ ${t("Moon in", "Lune en")} ${esc(moonSign.name)} ${moonSign.glyph}</p>
         <div class="hc-wheel">${SIGNS.map((x, i) => `<div class="${i === top ? "top" : ""}" style="--c:${EL_ACCENT[x.element]}"><span>${x.glyph}</span><b>${esc(x.name)}</b><small class="hc-stars5">${stars5(scores[i])}</small></div>`).join("")}</div>
         <p class="hc-swipe">${t(`★ Luckiest today: ${SIGNS[top].name} ${SIGNS[top].glyph}`, `★ Le plus chanceux du jour : ${SIGNS[top].name} ${SIGNS[top].glyph}`)}<br><span class="hc-swipe2">${t("Find your sign in the next pictures ➜", "Trouvez votre signe dans les images suivantes ➜")}</span></p>
-        ${footer()}
       </div>`;
   }
 
   const cardHTML = (i, date) => (mode === "daily" ? dayCardHTML(i, date) : monthCardHTML(i, date));
   const coverHTML = (date) => (mode === "daily" ? dayCoverHTML(date) : monthCoverHTML(date));
 
-  // Shrink text until everything fits the card; drop the retrograde note (and on daily cards the last tips) only as a last resort.
+  // Start the text large, then shrink it step by step until everything fits the card.
+  // Drop the retrograde note (and on daily cards the last tips) only as a last resort.
   function fitCard(card) {
     const box = card.querySelector(".hc-fit") || card.querySelector(".hc-cols");
     if (!box) return;
     const over = () => box.scrollHeight > box.clientHeight + 1;
-    const steps = [["--cols-fs", 22], ["--sum-fs", 25], ["--area-fs", 20], ["--cols-fs", 21], ["--sum-fs", 24], ["--area-fs", 19], ["--cols-fs", 20],
-      ["--sum-fs", 23], ["--area-fs", 18], ["--cols-fs", 19], ["--sum-fs", 22], ["--cols-fs", 18], ["--area-fs", 17]];
-    for (const [v, px] of steps) { if (!over()) return; card.style.setProperty(v, `${px}px`); }
+    const size = { "--cols-fs": 28, "--sum-fs": 30, "--area-fs": 25 };
+    const min = { "--cols-fs": 18, "--sum-fs": 22, "--area-fs": 17 };
+    const apply = () => Object.entries(size).forEach(([k, v]) => card.style.setProperty(k, `${v}px`));
+    apply();
+    const order = ["--cols-fs", "--sum-fs", "--area-fs"];
+    for (let turn = 0; over() && order.some((k) => size[k] > min[k]); turn++) {
+      const k = order[turn % 3];
+      if (size[k] > min[k]) { size[k]--; apply(); }
+    }
     if (over()) { const r = card.querySelector(".hc-retro"); if (r) r.remove(); }
     for (const ul of card.querySelectorAll(".hc-fit .hc-cols ul")) { while (over() && ul.children.length > 2) ul.lastElementChild.remove(); }
   }
@@ -328,7 +307,7 @@
   let busy = false;
   async function run(task) {
     if (busy) return;
-    if (!window.html2canvas || !window.jspdf || !window.JSZip || !window.qrcode) { msg(t("The export tools couldn't load. Check your connection and reload the page.", "Les outils d'export n'ont pas pu se charger. Vérifiez votre connexion et rechargez la page.")); return; }
+    if (!window.html2canvas || !window.jspdf || !window.JSZip) { msg(t("The export tools couldn't load. Check your connection and reload the page.", "Les outils d'export n'ont pas pu se charger. Vérifiez votre connexion et rechargez la page.")); return; }
     busy = true;
     document.querySelectorAll(".share-actions button, .thumb").forEach((b) => (b.disabled = true));
     try { await task(); } catch (e) { msg(t("Something went wrong while creating the files. Please try again.", "Un problème est survenu pendant la création des fichiers. Réessayez.") + ` (${e.message})`); }
@@ -372,7 +351,7 @@
   });
 
   // ---------- settings ----------
-  const fields = { brand: $("#set-brand"), fb: $("#set-fb"), site: $("#set-site") };
+  const fields = { brand: $("#set-brand"), site: $("#set-site") };
   Object.entries(fields).forEach(([k, el]) => {
     el.value = settings[k] || "";
     el.addEventListener("input", () => {
