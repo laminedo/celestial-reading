@@ -1,5 +1,5 @@
 // Offline support: cache the app shell, always try the network first so updates show up.
-const CACHE = "celestial-v4";
+const CACHE = "celestial-v5";
 const SHELL = ["./", "index.html", "styles.css", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png",
   "js/i18n.js", "js/data.js", "js/data-fr.js", "js/content-fr.js", "js/astro.js", "js/reading.js", "js/destiny.js", "js/places.js", "js/life.js", "js/views.js", "js/sync.js", "js/app.js", "share.html", "js/share.js"];
 
@@ -17,6 +17,6 @@ self.addEventListener("fetch", (e) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy));
       return res;
-    }).catch(() => caches.match(e.request).then((r) => r || caches.match("index.html")))
+    }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match("index.html")))
   );
 });

@@ -53,8 +53,14 @@
   }
 
   // ---------- content ----------
+  // Sign-wide chart (also defined in reading.js; kept here so an older cached reading.js can't break this page).
+  const signChart = (sign) => Reading.signChart ? Reading.signChart(sign) : {
+    name: "", seed: `sign|${sign}`, houseSign: sign, rising: null, when: new Date(2000, 0, 1), generic: true,
+    signs: Object.fromEntries(Reading.PLANET_KEYS.map((k) => [k, sign])),
+  };
+
   function signData(i, date) {
-    const R = Reading.monthly(Reading.signChart(i), date);
+    const R = Reading.monthly(signChart(i), date);
     const lunar = R.keyDates.filter((e) => e.title.startsWith(PHASES[0].icon) || e.title.startsWith(PHASES[4].icon));
     return {
       sign: SIGNS[i],
